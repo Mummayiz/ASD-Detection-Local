@@ -30,21 +30,21 @@ class ASDBackendTester:
         """Test basic health and root endpoints"""
         print("\n🔍 Testing Health Endpoints...")
         
-        # Test root endpoint
+        # Test API root endpoint
         try:
-            response = requests.get(f"{self.base_url}/", timeout=10)
+            response = requests.get(f"{self.base_url}/api/", timeout=10)
             success = response.status_code == 200
             if success:
                 data = response.json()
                 expected_keys = ['message', 'version', 'status', 'stages']
                 success = all(key in data for key in expected_keys)
-            self.log_test("Root Endpoint", success, f"Status: {response.status_code}")
+            self.log_test("API Root Endpoint", success, f"Status: {response.status_code}")
         except Exception as e:
-            self.log_test("Root Endpoint", False, str(e))
+            self.log_test("API Root Endpoint", False, str(e))
             
-        # Test health endpoint
+        # Test API health endpoint
         try:
-            response = requests.get(f"{self.base_url}/health", timeout=10)
+            response = requests.get(f"{self.base_url}/api/health", timeout=10)
             success = response.status_code == 200
             if success:
                 data = response.json()
@@ -52,9 +52,9 @@ class ASDBackendTester:
                 success = all(key in data for key in expected_keys)
                 if success:
                     print(f"   Models loaded: {data.get('models_loaded', 0)}")
-            self.log_test("Health Endpoint", success, f"Status: {response.status_code}")
+            self.log_test("API Health Endpoint", success, f"Status: {response.status_code}")
         except Exception as e:
-            self.log_test("Health Endpoint", False, str(e))
+            self.log_test("API Health Endpoint", False, str(e))
     
     def test_behavioral_assessment(self):
         """Test behavioral assessment endpoint"""
