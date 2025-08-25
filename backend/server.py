@@ -20,6 +20,27 @@ from bson import ObjectId
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def clean_mongo_doc(doc):
+    """Clean MongoDB document by removing ObjectId and converting datetime"""
+    if doc is None:
+        return None
+    
+    cleaned = {}
+    for key, value in doc.items():
+        if key == '_id':
+            continue  # Skip ObjectId
+        elif isinstance(value, ObjectId):
+            cleaned[key] = str(value)
+        elif isinstance(value, datetime):
+            cleaned[key] = value.isoformat()
+        elif isinstance(value, dict):
+            cleaned[key] = clean_mongo_doc(value)
+        elif isinstance(value, list):
+            cleaned[key] = [clean_mongo_doc(item) if isinstance(item, dict) else item for item in value]
+        else:
+            cleaned[key] = value
+    return cleaned
+
 def json_encoder(obj):
     """Custom JSON encoder for MongoDB ObjectId and datetime objects"""
     if isinstance(obj, ObjectId):
