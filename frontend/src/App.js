@@ -1265,6 +1265,7 @@ function App() {
             </CardTitle>
             <CardDescription className="text-orange-700">
               Complete analysis of your multi-stage ASD assessment with detailed explanations and clinical recommendations.
+              Your comprehensive report is ready for download and sharing with healthcare professionals.
             </CardDescription>
           </CardHeader>
         </Card>
