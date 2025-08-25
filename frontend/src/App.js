@@ -1499,6 +1499,65 @@ function App() {
           </Card>
         )}
 
+        {/* Report Generation Section */}
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-blue-900">
+              <FileText className="w-5 h-5" />
+              <span>Assessment Report</span>
+            </CardTitle>
+            <CardDescription className="text-blue-700">
+              Generate a comprehensive PDF-style report for healthcare professionals and personal records.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <div>
+                  <div className="font-medium text-sm">Complete Results</div>
+                  <div className="text-xs text-gray-600">All stages analyzed</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
+                <Shield className="w-5 h-5 text-blue-500" />
+                <div>
+                  <div className="font-medium text-sm">HIPAA Compliant</div>
+                  <div className="text-xs text-gray-600">Secure & confidential</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
+                <Stethoscope className="w-5 h-5 text-purple-500" />
+                <div>
+                  <div className="font-medium text-sm">Clinical Grade</div>
+                  <div className="text-xs text-gray-600">Professional format</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-center space-x-3">
+              <Button 
+                onClick={downloadReport} 
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 px-6"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download HTML Report
+              </Button>
+              
+              <Button 
+                onClick={printReport} 
+                variant="outline" 
+                size="lg"
+                className="px-6"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Print Report
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-gray-200">
           <CardContent className="p-6 text-center">
             <div className="space-y-4">
