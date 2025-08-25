@@ -39,7 +39,7 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
 
 function App() {
-  const [currentStage, setCurrentStage] = useState(0);
+  const [currentStage, setCurrentStage] = useState(0); // Start with introduction page
   const [assessmentData, setAssessmentData] = useState({
     behavioral: null,
     eyeTracking: null,
@@ -139,6 +139,7 @@ function App() {
   };
 
   const stages = [
+    { name: 'Introduction', icon: Info, color: 'indigo', description: 'Assessment overview and instructions' },
     { name: 'Behavioral Assessment', icon: Brain, color: 'blue', description: 'Clinical questionnaire analysis' },
     { name: 'Eye Tracking', icon: Eye, color: 'green', description: 'Gaze pattern analysis' },
     { name: 'Facial Analysis', icon: Camera, color: 'purple', description: 'Expression pattern recognition' },
