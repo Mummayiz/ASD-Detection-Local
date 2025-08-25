@@ -23,7 +23,10 @@ import {
   Stethoscope,
   FileText,
   Users,
-  Settings
+  Settings,
+  Download,
+  Printer,
+  Share
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
