@@ -385,7 +385,7 @@ function App() {
         
         const result = await response.json();
         setAssessmentData(prev => ({ ...prev, behavioral: result }));
-        setCurrentStage(1);
+        setCurrentStage(2);
       } catch (err) {
         setError(err.message);
       } finally {
