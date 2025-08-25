@@ -776,55 +776,92 @@ function App() {
     const [facialData, setFacialData] = useState(null);
     const [countdown, setCountdown] = useState(null);
     const [recordingTime, setRecordingTime] = useState(0);
+    const [stream, setStream] = useState(null);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [facialMetrics, setFacialMetrics] = useState({
+      emotionScores: { happy: 0, sad: 0, neutral: 0, surprised: 0, angry: 0 },
+      microExpressions: 0,
+      eyeContactRate: 0,
+      facialSymmetry: 0
+    });
 
-    const startFacialAnalysis = async () => {
+    const initializeCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = mediaStream;
         }
-        
-        setCountdown(3);
-        for (let i = 3; i > 0; i--) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setCountdown(i - 1);
-        }
-        
-        setIsRecording(true);
-        setRecordingTime(0);
-        
-        const timer = setInterval(() => {
-          setRecordingTime(prev => prev + 1);
-        }, 1000);
-        
-        setTimeout(() => {
-          clearInterval(timer);
-          const mockData = {
-            facial_features: Array.from({length: 128}, () => Math.random()),
-            emotion_scores: {
-              happy: Math.random() * 0.3,
-              sad: Math.random() * 0.2,
-              neutral: Math.random() * 0.8,
-              surprised: Math.random() * 0.1,
-              angry: Math.random() * 0.1
-            },
-            attention_patterns: {
-              attention_to_faces: Math.random() * 0.6,
-              attention_to_objects: Math.random() * 0.4,
-              gaze_stability: Math.random() * 0.8
-            }
-          };
-          
-          setFacialData(mockData);
-          setIsRecording(false);
-          
-          if (videoRef.current && videoRef.current.srcObject) {
-            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-          }
-        }, 15000);
-        
+        setStream(mediaStream);
+        setIsInitialized(true);
       } catch (err) {
         setError('Camera access denied. Please allow camera access and try again.');
+      }
+    };
+
+    const startRecording = async () => {
+      if (!isInitialized) {
+        await initializeCamera();
+      }
+      
+      setCountdown(3);
+      for (let i = 3; i > 0; i--) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setCountdown(i - 1);
+      }
+      
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Simulate real-time facial metrics updates
+      const metricsInterval = setInterval(() => {
+        setFacialMetrics(prev => ({
+          emotionScores: {
+            happy: Math.random() * 0.3,
+            sad: Math.random() * 0.2,
+            neutral: Math.random() * 0.8,
+            surprised: Math.random() * 0.1,
+            angry: Math.random() * 0.1
+          },
+          microExpressions: prev.microExpressions + Math.floor(Math.random() * 2),
+          eyeContactRate: Math.min(100, prev.eyeContactRate + Math.random() * 3),
+          facialSymmetry: 75 + Math.random() * 20
+        }));
+      }, 800);
+      
+      const timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Auto-stop after 15 seconds
+      setTimeout(() => {
+        clearInterval(timer);
+        clearInterval(metricsInterval);
+        stopRecording();
+      }, 15000);
+    };
+
+    const stopRecording = () => {
+      setIsRecording(false);
+      
+      const mockData = {
+        facial_features: Array.from({length: 128}, () => Math.random()),
+        emotion_scores: facialMetrics.emotionScores,
+        attention_patterns: {
+          attention_to_faces: Math.random() * 0.6,
+          attention_to_objects: Math.random() * 0.4,
+          gaze_stability: Math.random() * 0.8
+        },
+        micro_expressions_count: facialMetrics.microExpressions,
+        eye_contact_rate: facialMetrics.eyeContactRate / 100,
+        facial_symmetry: facialMetrics.facialSymmetry / 100
+      };
+      
+      setFacialData(mockData);
+      
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setIsInitialized(false);
       }
     };
 
@@ -904,13 +941,40 @@ function App() {
                     </span>
                   </div>
                 )}
+
+                {/* Real-time facial metrics overlay */}
+                {isRecording && (
+                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs space-y-1">
+                    <div>Eye Contact: {facialMetrics.eyeContactRate.toFixed(1)}%</div>
+                    <div>Micro-expressions: {facialMetrics.microExpressions}</div>
+                    <div>Facial Symmetry: {facialMetrics.facialSymmetry.toFixed(1)}%</div>
+                    <div>Dominant: {Object.entries(facialMetrics.emotionScores).reduce((a, b) => facialMetrics.emotionScores[a[0]] > facialMetrics.emotionScores[b[0]] ? a : b)[0]}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Recording Controls */}
+              <div className="flex justify-center space-x-4 mt-4">
+                {!isRecording && !facialData && (
+                  <Button onClick={startRecording} className="flex-1" size="lg">
+                    <Camera className="w-4 h-4 mr-2" />
+                    Start Recording
+                  </Button>
+                )}
+                
+                {isRecording && (
+                  <Button onClick={stopRecording} variant="destructive" className="flex-1" size="lg">
+                    <div className="w-4 h-4 bg-white rounded-full mr-2"></div>
+                    Stop Recording
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Analysis Parameters</CardTitle>
+              <CardTitle className="text-xl">Analysis Parameters & Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -923,23 +987,52 @@ function App() {
                   <div className="text-xs text-purple-700">Analysis Rate</div>
                 </div>
               </div>
-              
-              {!facialData && !isRecording && (
-                <Button onClick={startFacialAnalysis} className="w-full mt-6" size="lg">
-                  <Camera className="w-4 h-4 mr-2" />
-                  Start Facial Analysis
-                </Button>
-              )}
 
               {facialData && (
                 <div className="space-y-4 mt-6">
                   <Alert>
                     <CheckCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Facial analysis completed! Detected {Object.keys(facialData.emotion_scores).length} emotion patterns
-                      and comprehensive attention metrics.
+                      Facial analysis completed! Detected {facialData.micro_expressions_count} micro-expressions
+                      and comprehensive emotional patterns.
                     </AlertDescription>
                   </Alert>
+
+                  {/* Detailed Metrics Display */}
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">Eye Contact Rate</span>
+                        <span className="font-bold">{(facialData.eye_contact_rate * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${facialData.eye_contact_rate * 100}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-purple-50 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-purple-600">{facialData.micro_expressions_count}</div>
+                        <div className="text-xs text-purple-700">Micro-expressions</div>
+                      </div>
+                      <div className="bg-purple-50 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-purple-600">{(facialData.facial_symmetry * 100).toFixed(0)}%</div>
+                        <div className="text-xs text-purple-700">Facial Symmetry</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="font-medium text-gray-900 mb-3">Emotion Distribution</div>
+                      <div className="space-y-2">
+                        {Object.entries(facialData.emotion_scores).map(([emotion, score]) => (
+                          <div key={emotion} className="flex justify-between">
+                            <span className="text-sm text-gray-600 capitalize">{emotion}</span>
+                            <span className="text-sm font-medium">{(score * 100).toFixed(1)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                   
                   <Button onClick={submitFacialAnalysis} className="w-full" size="lg" disabled={loading}>
                     {loading ? (
