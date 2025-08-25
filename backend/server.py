@@ -400,7 +400,7 @@ async def complete_assessment(request: CompleteAssessmentRequest):
         total_weight = 0
         stage_results = {}
         
-        for assessment in assessments:
+        for assessment in cleaned_assessments:
             stage = assessment['stage']
             if stage in stage_weights:
                 prob = assessment['result']['probability']
