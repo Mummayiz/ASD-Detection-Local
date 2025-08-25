@@ -517,8 +517,10 @@ function App() {
     const [eyeMetrics, setEyeMetrics] = useState({
       fixationCount: 0,
       saccadeCount: 0,
-      blinkRate: 0,
-      gazeStability: 0
+      blinkRate: 12.5, // Normal blink rate: 12-15 blinks per minute
+      gazeStability: 85, // Start with good stability
+      avgFixationDuration: 250, // Normal fixation: 200-400ms
+      pupilSize: 3.5 // Normal pupil size: 3-4mm
     });
 
     const initializeCamera = async () => {
@@ -548,15 +550,27 @@ function App() {
       setIsRecording(true);
       setRecordingTime(0);
       
-      // Simulate real-time metrics updates
+      // Reset metrics
+      setEyeMetrics({
+        fixationCount: 0,
+        saccadeCount: 0,
+        blinkRate: 12.5,
+        gazeStability: 85,
+        avgFixationDuration: 250,
+        pupilSize: 3.5
+      });
+      
+      // Simulate more realistic real-time metrics updates
       const metricsInterval = setInterval(() => {
         setEyeMetrics(prev => ({
-          fixationCount: prev.fixationCount + Math.floor(Math.random() * 3),
-          saccadeCount: prev.saccadeCount + Math.floor(Math.random() * 2),
-          blinkRate: Math.random() * 0.5 + 1.5,
-          gazeStability: Math.min(100, prev.gazeStability + Math.random() * 5)
+          fixationCount: prev.fixationCount + Math.floor(Math.random() * 2) + 1,
+          saccadeCount: prev.saccadeCount + Math.floor(Math.random() * 3),
+          blinkRate: Math.max(8, Math.min(20, prev.blinkRate + (Math.random() - 0.5) * 2)),
+          gazeStability: Math.max(60, Math.min(95, prev.gazeStability + (Math.random() - 0.5) * 5)),
+          avgFixationDuration: Math.max(150, Math.min(500, prev.avgFixationDuration + (Math.random() - 0.5) * 30)),
+          pupilSize: Math.max(2.5, Math.min(5.0, prev.pupilSize + (Math.random() - 0.5) * 0.3))
         }));
-      }, 500);
+      }, 800);
       
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -574,17 +588,18 @@ function App() {
       setIsRecording(false);
       
       const mockData = {
-        fixation_count: eyeMetrics.fixationCount + Math.random() * 20 + 50,
-        mean_saccade: Math.random() * 50 + 30,
-        max_saccade: Math.random() * 100 + 50,
-        std_saccade: Math.random() * 20 + 10,
-        mean_x: Math.random() * 200 + 400,
-        mean_y: Math.random() * 150 + 300,
-        std_x: Math.random() * 100 + 50,
-        std_y: Math.random() * 100 + 50,
-        mean_pupil: Math.random() * 2 + 3,
+        fixation_count: eyeMetrics.fixationCount + Math.random() * 10 + 15, // Typical: 20-30 fixations in 10s
+        mean_saccade: Math.random() * 20 + 25, // Typical: 25-45 pixels
+        max_saccade: Math.random() * 40 + 60, // Typical: 60-100 pixels
+        std_saccade: Math.random() * 10 + 15, // Standard deviation
+        mean_x: Math.random() * 150 + 425, // Center around screen center
+        mean_y: Math.random() * 100 + 350,
+        std_x: Math.random() * 50 + 75,
+        std_y: Math.random() * 40 + 60,
+        mean_pupil: eyeMetrics.pupilSize,
         blink_rate: eyeMetrics.blinkRate,
-        gaze_stability: eyeMetrics.gazeStability / 100
+        gaze_stability: eyeMetrics.gazeStability / 100,
+        avg_fixation_duration: eyeMetrics.avgFixationDuration
       };
       
       setEyeTrackingData(mockData);
@@ -656,18 +671,8 @@ function App() {
                   <div className="absolute top-4 right-4 flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                     <span className="text-white text-sm bg-black bg-opacity-50 px-2 py-1 rounded">
-                      Recording {recordingTime}s
+                      Recording {recordingTime}s/10s
                     </span>
-                  </div>
-                )}
-
-                {/* Real-time metrics overlay */}
-                {isRecording && (
-                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs">
-                    <div>Fixations: {eyeMetrics.fixationCount}</div>
-                    <div>Saccades: {eyeMetrics.saccadeCount}</div>
-                    <div>Blink Rate: {eyeMetrics.blinkRate.toFixed(1)}/min</div>
-                    <div>Gaze Stability: {eyeMetrics.gazeStability.toFixed(1)}%</div>
                   </div>
                 )}
               </div>
@@ -693,58 +698,114 @@ function App() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Instructions & Metrics</CardTitle>
+              <CardTitle className="text-xl">Real-time Eye Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-xs font-bold text-green-600">1</span>
+              {!isRecording && !eyeTrackingData && (
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <Eye className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Click "Start Recording" to begin eye tracking analysis</p>
                   </div>
-                  <p className="text-sm text-gray-700">Position yourself comfortably in front of the camera</p>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-xs font-bold text-green-600">2</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-xs font-bold text-green-600">1</span>
+                      </div>
+                      <p className="text-sm text-gray-700">Position yourself comfortably in front of the camera</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-xs font-bold text-green-600">2</span>
+                      </div>
+                      <p className="text-sm text-gray-700">Look naturally at the screen during recording</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-xs font-bold text-green-600">3</span>
+                      </div>
+                      <p className="text-sm text-gray-700">Recording will auto-stop after 10 seconds</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-700">Click "Start Recording" and look naturally at the screen</p>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-xs font-bold text-green-600">3</span>
+              )}
+
+              {isRecording && (
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="text-lg font-semibold text-green-600">Live Analysis</div>
+                    <div className="text-sm text-gray-600">Recording: {recordingTime}/10 seconds</div>
                   </div>
-                  <p className="text-sm text-gray-700">Recording will auto-stop after 10 seconds or click "Stop"</p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-green-600">{eyeMetrics.fixationCount}</div>
+                      <div className="text-xs text-green-700">Fixations</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-green-600">{eyeMetrics.saccadeCount}</div>
+                      <div className="text-xs text-green-700">Saccades</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-green-600">{eyeMetrics.blinkRate.toFixed(1)}</div>
+                      <div className="text-xs text-green-700">Blinks/min</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-green-600">{eyeMetrics.gazeStability.toFixed(0)}%</div>
+                      <div className="text-xs text-green-700">Gaze Stability</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Avg Fixation Duration</span>
+                      <span className="font-medium">{eyeMetrics.avgFixationDuration.toFixed(0)}ms</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Pupil Size</span>
+                      <span className="font-medium">{eyeMetrics.pupilSize.toFixed(1)}mm</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {eyeTrackingData && (
-                <div className="space-y-4 mt-6">
+                <div className="space-y-4">
                   <Alert>
                     <CheckCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Eye tracking data collected successfully! 
-                      Detected {Math.round(eyeTrackingData.fixation_count)} fixations and 
-                      {eyeTrackingData.mean_saccade.toFixed(1)}px average saccadic movements.
+                      Eye tracking analysis completed successfully!
                     </AlertDescription>
                   </Alert>
 
-                  {/* Detailed Metrics Display */}
-                  <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-green-600">{Math.round(eyeTrackingData.fixation_count)}</div>
+                      <div className="text-xl font-bold text-green-600">{Math.round(eyeTrackingData.fixation_count)}</div>
                       <div className="text-xs text-green-700">Total Fixations</div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-green-600">{eyeTrackingData.mean_saccade.toFixed(1)}px</div>
+                      <div className="text-xl font-bold text-green-600">{eyeTrackingData.mean_saccade.toFixed(1)}px</div>
                       <div className="text-xs text-green-700">Avg Saccade</div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-green-600">{eyeTrackingData.blink_rate.toFixed(1)}/min</div>
+                      <div className="text-xl font-bold text-green-600">{eyeTrackingData.blink_rate.toFixed(1)}/min</div>
                       <div className="text-xs text-green-700">Blink Rate</div>
                     </div>
                     <div className="bg-green-50 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-green-600">{(eyeTrackingData.gaze_stability * 100).toFixed(1)}%</div>
+                      <div className="text-xl font-bold text-green-600">{(eyeTrackingData.gaze_stability * 100).toFixed(0)}%</div>
                       <div className="text-xs text-green-700">Gaze Stability</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Avg Fixation Duration</span>
+                      <span className="font-medium">{eyeTrackingData.avg_fixation_duration.toFixed(0)}ms</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Pupil Size</span>
+                      <span className="font-medium">{eyeTrackingData.mean_pupil.toFixed(1)}mm</span>
                     </div>
                   </div>
                   
