@@ -383,6 +383,16 @@ async def complete_assessment(request: CompleteAssessmentRequest):
         if not assessments:
             raise HTTPException(status_code=404, detail="No assessments found")
         
+        # Clean assessments to remove ObjectId and other non-serializable fields
+        cleaned_assessments = []
+        for assessment in assessments:
+            cleaned_assessment = {
+                'stage': assessment['stage'],
+                'result': assessment['result'],
+                'timestamp': assessment['timestamp'].isoformat() if hasattr(assessment['timestamp'], 'isoformat') else str(assessment['timestamp'])
+            }
+            cleaned_assessments.append(cleaned_assessment)
+        
         # Combine predictions with weights
         stage_weights = {'behavioral': 0.6, 'eye_tracking': 0.25, 'facial_analysis': 0.15}
         
