@@ -424,7 +424,7 @@ body {
 
 /* Enhanced Accessibility */
 .focus-visible-medical {
-  @apply focus:outline-none focus:ring-3 focus:ring-blue-500 focus:ring-offset-2;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
 }
 
 /* High Contrast Mode Support */
