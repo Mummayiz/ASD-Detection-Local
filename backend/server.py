@@ -360,10 +360,15 @@ async def assess_facial_analysis(data: FacialAnalysisData):
         logger.error(f"Facial analysis assessment error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Assessment failed: {str(e)}")
 
+class CompleteAssessmentRequest(BaseModel):
+    """Request model for complete assessment"""
+    session_id: str
+
 @app.post("/api/assessment/complete")
-async def complete_assessment(session_id: str):
+async def complete_assessment(request: CompleteAssessmentRequest):
     """Generate final assessment combining all stages"""
     try:
+        session_id = request.session_id
         # Retrieve all assessments for this session
         assessments = await db.assessments.find({'session_id': session_id}).to_list(length=None)
         
