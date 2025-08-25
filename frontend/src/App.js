@@ -1291,18 +1291,10 @@ function App() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8 mt-16">
         <div className="max-w-7xl mx-auto px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="flex items-center justify-center space-x-3 text-gray-600">
-              <Shield className="w-5 h-5" />
-              <span className="font-medium">HIPAA Compliant</span>
-            </div>
-            <div className="flex items-center justify-center space-x-3 text-gray-600">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">Clinically Validated</span>
-            </div>
-            <div className="flex items-center justify-center space-x-3 text-gray-600">
+          <div className="text-center">
+            <div className="flex items-center justify-center space-x-3 text-gray-600 mb-4">
               <Stethoscope className="w-5 h-5" />
-              <span className="font-medium">Professional Grade</span>
+              <span className="font-medium">Professional Grade Assessment</span>
             </div>
           </div>
           <Separator className="my-6" />
