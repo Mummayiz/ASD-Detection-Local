@@ -1206,6 +1206,48 @@ function App() {
       return 'Low Risk';
     };
 
+    // Calculate overall ASD determination
+    const getOverallASDDetermination = () => {
+      if (!behavioral && !eyeTracking && !facialAnalysis) return null;
+      
+      let asdCount = 0;
+      let totalStages = 0;
+      let avgProbability = 0;
+      
+      if (behavioral) {
+        totalStages++;
+        avgProbability += behavioral.probability;
+        if (behavioral.prediction) asdCount++;
+      }
+      
+      if (eyeTracking) {
+        totalStages++;
+        avgProbability += eyeTracking.probability;
+        if (eyeTracking.prediction) asdCount++;
+      }
+      
+      if (facialAnalysis) {
+        totalStages++;
+        avgProbability += facialAnalysis.probability;
+        if (facialAnalysis.prediction) asdCount++;
+      }
+      
+      avgProbability = avgProbability / totalStages;
+      
+      // Determine overall result based on majority vote and probability threshold
+      const isASDPositive = (asdCount >= 2) || (avgProbability > 0.6);
+      
+      return {
+        isPositive: isASDPositive,
+        probability: avgProbability,
+        confidence: totalStages === 3 ? 'High' : totalStages === 2 ? 'Medium' : 'Low',
+        stagesCompleted: totalStages,
+        positiveStages: asdCount
+      };
+    };
+
+    const overallResult = getOverallASDDetermination();
+
     return (
       <div className="space-y-8">
         {/* Header */}
@@ -1219,6 +1261,51 @@ function App() {
           </div>
         </div>
 
+        {/* Overall ASD Determination Card */}
+        {overallResult && (
+          <div className={`rounded-xl p-8 border-2 ${overallResult.isPositive ? 'bg-orange-50 border-orange-300' : 'bg-green-50 border-green-300'}`}>
+            <div className="text-center">
+              <div className={`text-6xl font-bold mb-4 ${overallResult.isPositive ? 'text-orange-600' : 'text-green-600'}`}>
+                {overallResult.isPositive ? 'ASD POSITIVE' : 'ASD NEGATIVE'}
+              </div>
+              <div className="text-xl text-gray-700 mb-6">
+                Based on {overallResult.stagesCompleted} assessment stage{overallResult.stagesCompleted > 1 ? 's' : ''} completed
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900">{(overallResult.probability * 100).toFixed(1)}%</div>
+                  <div className="text-sm text-gray-600">Overall Probability</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900">{overallResult.confidence}</div>
+                  <div className="text-sm text-gray-600">Confidence Level</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900">{overallResult.positiveStages}/{overallResult.stagesCompleted}</div>
+                  <div className="text-sm text-gray-600">Positive Stages</div>
+                </div>
+              </div>
+              
+              <div className={`mt-6 p-4 rounded-lg ${overallResult.isPositive ? 'bg-orange-100' : 'bg-green-100'}`}>
+                <div className="flex items-center justify-center space-x-2">
+                  {overallResult.isPositive ? (
+                    <AlertCircle className="w-5 h-5 text-orange-600" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  )}
+                  <span className={`font-semibold ${overallResult.isPositive ? 'text-orange-800' : 'text-green-800'}`}>
+                    {overallResult.isPositive 
+                      ? 'Further evaluation with healthcare professionals is recommended' 
+                      : 'No immediate ASD indicators detected in current assessment'
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Three Analysis Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Behavioral Analysis */}
@@ -1229,15 +1316,17 @@ function App() {
                 <h3 className="text-xl font-bold text-gray-900">Behavioral Analysis</h3>
               </div>
               
-              <div className="bg-gray-100 rounded-lg px-4 py-2 mb-6 text-center">
-                <span className="text-sm font-medium text-gray-600">{getRiskLevel(behavioral.probability)}</span>
+              <div className={`rounded-lg px-4 py-2 mb-6 text-center ${behavioral.prediction ? 'bg-orange-100' : 'bg-green-100'}`}>
+                <span className={`text-sm font-medium ${behavioral.prediction ? 'text-orange-800' : 'text-green-800'}`}>
+                  {behavioral.prediction ? 'ASD Indicators Present' : 'No ASD Indicators'}
+                </span>
               </div>
 
               <div className="space-y-4 mb-6">
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-gray-600">Overall Score</span>
-                    <span className="font-bold">7/18</span>
+                    <span className="font-bold">{(behavioral.probability * 100).toFixed(1)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${(behavioral.probability * 100)}%` }}></div>
@@ -1290,7 +1379,7 @@ function App() {
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
                   <Info className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <p className="text-sm text-blue-800">Score of 38.9%. Lower scores suggest fewer ASD indicators.</p>
+                  <p className="text-sm text-blue-800">Score of {(behavioral.probability * 100).toFixed(1)}%. Lower scores suggest fewer ASD indicators.</p>
                 </div>
               </div>
             </div>
@@ -1304,8 +1393,10 @@ function App() {
                 <h3 className="text-xl font-bold text-gray-900">Eye Tracking Analysis</h3>
               </div>
               
-              <div className="bg-gray-100 rounded-lg px-4 py-2 mb-6 text-center">
-                <span className="text-sm font-medium text-gray-600">{getRiskLevel(eyeTracking.probability)}</span>
+              <div className={`rounded-lg px-4 py-2 mb-6 text-center ${eyeTracking.prediction ? 'bg-orange-100' : 'bg-green-100'}`}>
+                <span className={`text-sm font-medium ${eyeTracking.prediction ? 'text-orange-800' : 'text-green-800'}`}>
+                  {eyeTracking.prediction ? 'ASD Indicators Present' : 'No ASD Indicators'}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -1360,8 +1451,10 @@ function App() {
                 <h3 className="text-xl font-bold text-gray-900">Facial Expression Analysis</h3>
               </div>
               
-              <div className="bg-gray-100 rounded-lg px-4 py-2 mb-6 text-center">
-                <span className="text-sm font-medium text-gray-600">{getRiskLevel(facialAnalysis.probability)}</span>
+              <div className={`rounded-lg px-4 py-2 mb-6 text-center ${facialAnalysis.prediction ? 'bg-orange-100' : 'bg-green-100'}`}>
+                <span className={`text-sm font-medium ${facialAnalysis.prediction ? 'text-orange-800' : 'text-green-800'}`}>
+                  {facialAnalysis.prediction ? 'ASD Indicators Present' : 'No ASD Indicators'}
+                </span>
               </div>
 
               <div className="space-y-4 mb-6">
