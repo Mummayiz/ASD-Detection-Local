@@ -1523,9 +1523,23 @@ function App() {
                   Start New Assessment
                 </Button>
                 
-                <Button variant="outline" size="lg">
-                  <FileText className="w-4 h-4 mr-2" />
+                <Button 
+                  onClick={downloadReport} 
+                  variant="default" 
+                  size="lg"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4 mr-2" />
                   Download Report
+                </Button>
+
+                <Button 
+                  onClick={printReport} 
+                  variant="outline" 
+                  size="lg"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Report
                 </Button>
               </div>
             </div>
