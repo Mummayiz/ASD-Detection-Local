@@ -27,12 +27,19 @@ def train_behavioral_models():
     data = pd.read_csv('/app/autism_behavioral.csv')
     print(f"Loaded behavioral data: {data.shape}")
     
-    # Prepare features (A1_Score to A10_Score + age + gender)
+    # Prepare features (A1_Score to A10_Score + age + encoded gender)
     feature_cols = ['A1_Score', 'A2_Score', 'A3_Score', 'A4_Score', 'A5_Score', 
-                   'A6_Score', 'A7_Score', 'A8_Score', 'A9_Score', 'A10_Score', 
-                   'age', 'gender']
+                   'A6_Score', 'A7_Score', 'A8_Score', 'A9_Score', 'A10_Score', 'age']
     
-    X = data[feature_cols].values
+    X_features = data[feature_cols].values
+    
+    # Encode gender separately
+    gender_encoder = LabelEncoder()
+    gender_encoded = gender_encoder.fit_transform(data['gender']).reshape(-1, 1)
+    
+    # Combine features
+    X = np.column_stack([X_features, gender_encoded])
+    feature_cols.append('gender_encoded')
     
     # Prepare target
     label_encoder = LabelEncoder()
