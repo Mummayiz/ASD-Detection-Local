@@ -840,10 +840,17 @@ function App() {
     const [stream, setStream] = useState(null);
     const [isInitialized, setIsInitialized] = useState(false);
     const [facialMetrics, setFacialMetrics] = useState({
-      emotionScores: { happy: 0, sad: 0, neutral: 0, surprised: 0, angry: 0 },
+      emotionScores: { 
+        neutral: 0.65,
+        happy: 0.15, 
+        sad: 0.08, 
+        surprised: 0.07, 
+        angry: 0.05 
+      },
       microExpressions: 0,
-      eyeContactRate: 0,
-      facialSymmetry: 0
+      eyeContactRate: 45, // Typical reduced eye contact in ASD: 30-60%
+      facialSymmetry: 82,
+      expressionVariability: 0.3
     });
 
     const initializeCamera = async () => {
@@ -873,21 +880,48 @@ function App() {
       setIsRecording(true);
       setRecordingTime(0);
       
-      // Simulate real-time facial metrics updates
+      // Reset metrics to starting values
+      setFacialMetrics({
+        emotionScores: { 
+          neutral: 0.65,
+          happy: 0.15, 
+          sad: 0.08, 
+          surprised: 0.07, 
+          angry: 0.05 
+        },
+        microExpressions: 0,
+        eyeContactRate: 45,
+        facialSymmetry: 82,
+        expressionVariability: 0.3
+      });
+      
+      // Simulate more realistic facial metrics updates
       const metricsInterval = setInterval(() => {
-        setFacialMetrics(prev => ({
-          emotionScores: {
-            happy: Math.random() * 0.3,
-            sad: Math.random() * 0.2,
-            neutral: Math.random() * 0.8,
-            surprised: Math.random() * 0.1,
-            angry: Math.random() * 0.1
-          },
-          microExpressions: prev.microExpressions + Math.floor(Math.random() * 2),
-          eyeContactRate: Math.min(100, prev.eyeContactRate + Math.random() * 3),
-          facialSymmetry: 75 + Math.random() * 20
-        }));
-      }, 800);
+        setFacialMetrics(prev => {
+          // More realistic emotion score fluctuations
+          const emotionVariation = 0.1;
+          const newEmotions = {};
+          let total = 0;
+          
+          Object.keys(prev.emotionScores).forEach(emotion => {
+            newEmotions[emotion] = Math.max(0, prev.emotionScores[emotion] + (Math.random() - 0.5) * emotionVariation);
+            total += newEmotions[emotion];
+          });
+          
+          // Normalize to sum to 1
+          Object.keys(newEmotions).forEach(emotion => {
+            newEmotions[emotion] = newEmotions[emotion] / total;
+          });
+          
+          return {
+            emotionScores: newEmotions,
+            microExpressions: prev.microExpressions + (Math.random() < 0.3 ? 1 : 0),
+            eyeContactRate: Math.max(20, Math.min(80, prev.eyeContactRate + (Math.random() - 0.5) * 4)),
+            facialSymmetry: Math.max(70, Math.min(95, prev.facialSymmetry + (Math.random() - 0.5) * 3)),
+            expressionVariability: Math.max(0.1, Math.min(0.8, prev.expressionVariability + (Math.random() - 0.5) * 0.1))
+          };
+        });
+      }, 1000);
       
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -908,13 +942,14 @@ function App() {
         facial_features: Array.from({length: 128}, () => Math.random()),
         emotion_scores: facialMetrics.emotionScores,
         attention_patterns: {
-          attention_to_faces: Math.random() * 0.6,
-          attention_to_objects: Math.random() * 0.4,
-          gaze_stability: Math.random() * 0.8
+          attention_to_faces: facialMetrics.eyeContactRate / 100,
+          attention_to_objects: 1 - (facialMetrics.eyeContactRate / 100),
+          gaze_stability: Math.random() * 0.3 + 0.6
         },
         micro_expressions_count: facialMetrics.microExpressions,
         eye_contact_rate: facialMetrics.eyeContactRate / 100,
-        facial_symmetry: facialMetrics.facialSymmetry / 100
+        facial_symmetry: facialMetrics.facialSymmetry / 100,
+        expression_variability: facialMetrics.expressionVariability
       };
       
       setFacialData(mockData);
@@ -961,6 +996,10 @@ function App() {
       }
     };
 
+    const getDominantEmotion = (emotions) => {
+      return Object.entries(emotions).reduce((a, b) => emotions[a[0]] > emotions[b[0]] ? a : b)[0];
+    };
+
     return (
       <div className="space-y-8">
         <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl p-8 border border-purple-200">
@@ -998,18 +1037,8 @@ function App() {
                   <div className="absolute top-4 right-4 flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
                     <span className="text-white text-sm bg-black bg-opacity-50 px-2 py-1 rounded">
-                      Analyzing {recordingTime}s
+                      Analyzing {recordingTime}s/15s
                     </span>
-                  </div>
-                )}
-
-                {/* Real-time facial metrics overlay */}
-                {isRecording && (
-                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs space-y-1">
-                    <div>Eye Contact: {facialMetrics.eyeContactRate.toFixed(1)}%</div>
-                    <div>Micro-expressions: {facialMetrics.microExpressions}</div>
-                    <div>Facial Symmetry: {facialMetrics.facialSymmetry.toFixed(1)}%</div>
-                    <div>Dominant: {Object.entries(facialMetrics.emotionScores).reduce((a, b) => facialMetrics.emotionScores[a[0]] > facialMetrics.emotionScores[b[0]] ? a : b)[0]}</div>
                   </div>
                 )}
               </div>
@@ -1035,63 +1064,106 @@ function App() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Analysis Parameters & Metrics</CardTitle>
+              <CardTitle className="text-xl">Real-time Facial Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-600">15s</div>
-                  <div className="text-xs text-purple-700">Recording Duration</div>
+              {!isRecording && !facialData && (
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Click "Start Recording" to begin facial analysis</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-purple-600">15s</div>
+                      <div className="text-xs text-purple-700">Recording Duration</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-purple-600">30fps</div>
+                      <div className="text-xs text-purple-700">Analysis Rate</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-purple-50 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-600">30fps</div>
-                  <div className="text-xs text-purple-700">Analysis Rate</div>
+              )}
+
+              {isRecording && (
+                <div className="space-y-4">
+                  <div className="text-center mb-4">
+                    <div className="text-lg font-semibold text-purple-600">Live Analysis</div>
+                    <div className="text-sm text-gray-600">Recording: {recordingTime}/15 seconds</div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{facialMetrics.eyeContactRate.toFixed(0)}%</div>
+                      <div className="text-xs text-purple-700">Eye Contact</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{facialMetrics.microExpressions}</div>
+                      <div className="text-xs text-purple-700">Micro-expressions</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{facialMetrics.facialSymmetry.toFixed(0)}%</div>
+                      <div className="text-xs text-purple-700">Facial Symmetry</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600 capitalize">{getDominantEmotion(facialMetrics.emotionScores)}</div>
+                      <div className="text-xs text-purple-700">Dominant Emotion</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="font-medium text-gray-900 mb-2">Live Emotion Distribution</div>
+                    <div className="space-y-1">
+                      {Object.entries(facialMetrics.emotionScores).map(([emotion, score]) => (
+                        <div key={emotion} className="flex justify-between text-sm">
+                          <span className="text-gray-600 capitalize">{emotion}</span>
+                          <span className="font-medium">{(score * 100).toFixed(1)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {facialData && (
-                <div className="space-y-4 mt-6">
+                <div className="space-y-4">
                   <Alert>
                     <CheckCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Facial analysis completed! Detected {facialData.micro_expressions_count} micro-expressions
-                      and comprehensive emotional patterns.
+                      Facial analysis completed successfully!
                     </AlertDescription>
                   </Alert>
 
-                  {/* Detailed Metrics Display */}
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-600">Eye Contact Rate</span>
-                        <span className="font-bold">{(facialData.eye_contact_rate * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${facialData.eye_contact_rate * 100}%` }}></div>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{(facialData.eye_contact_rate * 100).toFixed(0)}%</div>
+                      <div className="text-xs text-purple-700">Eye Contact Rate</div>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-purple-50 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-purple-600">{facialData.micro_expressions_count}</div>
-                        <div className="text-xs text-purple-700">Micro-expressions</div>
-                      </div>
-                      <div className="bg-purple-50 rounded-lg p-3 text-center">
-                        <div className="text-2xl font-bold text-purple-600">{(facialData.facial_symmetry * 100).toFixed(0)}%</div>
-                        <div className="text-xs text-purple-700">Facial Symmetry</div>
-                      </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{facialData.micro_expressions_count}</div>
+                      <div className="text-xs text-purple-700">Micro-expressions</div>
                     </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{(facialData.facial_symmetry * 100).toFixed(0)}%</div>
+                      <div className="text-xs text-purple-700">Facial Symmetry</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-purple-600">{(facialData.expression_variability * 100).toFixed(0)}%</div>
+                      <div className="text-xs text-purple-700">Expression Variability</div>
+                    </div>
+                  </div>
 
-                    <div>
-                      <div className="font-medium text-gray-900 mb-3">Emotion Distribution</div>
-                      <div className="space-y-2">
-                        {Object.entries(facialData.emotion_scores).map(([emotion, score]) => (
-                          <div key={emotion} className="flex justify-between">
-                            <span className="text-sm text-gray-600 capitalize">{emotion}</span>
-                            <span className="text-sm font-medium">{(score * 100).toFixed(1)}%</span>
-                          </div>
-                        ))}
-                      </div>
+                  <div>
+                    <div className="font-medium text-gray-900 mb-3">Final Emotion Distribution</div>
+                    <div className="space-y-2">
+                      {Object.entries(facialData.emotion_scores).map(([emotion, score]) => (
+                        <div key={emotion} className="flex justify-between">
+                          <span className="text-sm text-gray-600 capitalize">{emotion}</span>
+                          <span className="text-sm font-medium">{(score * 100).toFixed(1)}%</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   
