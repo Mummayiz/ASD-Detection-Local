@@ -1568,7 +1568,7 @@ function App() {
           </Alert>
         )}
 
-        {currentStage < 3 && <StageProgress />}
+        {currentStage < 4 && <StageProgress />}
         
         {renderCurrentStage()}
       </main>
