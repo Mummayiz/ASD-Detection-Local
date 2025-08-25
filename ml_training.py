@@ -51,8 +51,8 @@ class ASDDataProcessor:
     
     def preprocess_behavioral_data(self, data):
         """Preprocess behavioral dataset"""
-        # Handle missing values
-        data = data.fillna(data.mean())
+        print(f"Original data shape: {data.shape}")
+        print(f"Columns: {data.columns[:10].tolist()}")  # Show first 10 columns
         
         # Identify features and target
         # Based on your CSV structure, looking for label column
@@ -73,13 +73,26 @@ class ASDDataProcessor:
             print("Warning: No clear target column found. Using last column as target.")
             target_col = data.columns[-1]
         
-        # Prepare features
+        print(f"Using target column: {target_col}")
+        
+        # Prepare features - only numeric columns
         feature_columns = []
         for col in data.columns:
-            if col != target_col and data[col].dtype in ['int64', 'float64']:
-                feature_columns.append(col)
+            if col != target_col and col != 'filename' and col != 'modality':
+                if data[col].dtype in ['int64', 'float64']:
+                    feature_columns.append(col)
+                elif col.startswith('A') and col.endswith('_Score'):  # A1_Score, A2_Score, etc.
+                    feature_columns.append(col)
         
+        print(f"Selected feature columns: {feature_columns}")
+        
+        # Extract features
         X = data[feature_columns].values
+        
+        # Handle missing values in numeric data
+        from sklearn.impute import SimpleImputer
+        imputer = SimpleImputer(strategy='mean')
+        X = imputer.fit_transform(X)
         
         # Handle target variable
         if data[target_col].dtype == 'object':
