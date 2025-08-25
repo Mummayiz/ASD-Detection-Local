@@ -173,7 +173,7 @@ function App() {
             </div>
           </div>
           <Badge className="bg-blue-100 text-blue-800 px-3 py-1">
-            Session: {sessionId.split('_')[1]}
+            ID: {sessionId.split('_')[1]}
           </Badge>
         </div>
       </div>
