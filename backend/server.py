@@ -143,9 +143,29 @@ async def root():
         "stages": ["behavioral", "eye_tracking", "facial_analysis"]
     }
 
+@app.get("/api/")
+async def api_root():
+    """API Root endpoint"""
+    return {
+        "message": "ASD Detection API",
+        "version": "1.0.0",
+        "status": "active",
+        "stages": ["behavioral", "eye_tracking", "facial_analysis"]
+    }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "models_loaded": len(models),
+        "available_stages": ["behavioral", "eye_tracking", "facial_analysis"]
+    }
+
+@app.get("/api/health")
+async def api_health_check():
+    """API Health check endpoint"""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
