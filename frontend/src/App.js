@@ -512,51 +512,87 @@ function App() {
     const [eyeTrackingData, setEyeTrackingData] = useState(null);
     const [countdown, setCountdown] = useState(null);
     const [recordingTime, setRecordingTime] = useState(0);
+    const [stream, setStream] = useState(null);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [eyeMetrics, setEyeMetrics] = useState({
+      fixationCount: 0,
+      saccadeCount: 0,
+      blinkRate: 0,
+      gazeStability: 0
+    });
 
-    const startEyeTracking = async () => {
+    const initializeCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = mediaStream;
         }
-        
-        setCountdown(3);
-        for (let i = 3; i > 0; i--) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          setCountdown(i - 1);
-        }
-        
-        setIsRecording(true);
-        setRecordingTime(0);
-        
-        const timer = setInterval(() => {
-          setRecordingTime(prev => prev + 1);
-        }, 1000);
-        
-        setTimeout(() => {
-          clearInterval(timer);
-          const mockData = {
-            fixation_count: Math.random() * 100 + 50,
-            mean_saccade: Math.random() * 50 + 30,
-            max_saccade: Math.random() * 100 + 50,
-            std_saccade: Math.random() * 20 + 10,
-            mean_x: Math.random() * 200 + 400,
-            mean_y: Math.random() * 150 + 300,
-            std_x: Math.random() * 100 + 50,
-            std_y: Math.random() * 100 + 50,
-            mean_pupil: Math.random() * 2 + 3
-          };
-          
-          setEyeTrackingData(mockData);
-          setIsRecording(false);
-          
-          if (videoRef.current && videoRef.current.srcObject) {
-            videoRef.current.srcObject.getTracks().forEach(track => track.stop());
-          }
-        }, 10000);
-        
+        setStream(mediaStream);
+        setIsInitialized(true);
       } catch (err) {
         setError('Camera access denied. Please allow camera access and try again.');
+      }
+    };
+
+    const startRecording = async () => {
+      if (!isInitialized) {
+        await initializeCamera();
+      }
+      
+      setCountdown(3);
+      for (let i = 3; i > 0; i--) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setCountdown(i - 1);
+      }
+      
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Simulate real-time metrics updates
+      const metricsInterval = setInterval(() => {
+        setEyeMetrics(prev => ({
+          fixationCount: prev.fixationCount + Math.floor(Math.random() * 3),
+          saccadeCount: prev.saccadeCount + Math.floor(Math.random() * 2),
+          blinkRate: Math.random() * 0.5 + 1.5,
+          gazeStability: Math.min(100, prev.gazeStability + Math.random() * 5)
+        }));
+      }, 500);
+      
+      const timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      // Auto-stop after 10 seconds
+      setTimeout(() => {
+        clearInterval(timer);
+        clearInterval(metricsInterval);
+        stopRecording();
+      }, 10000);
+    };
+
+    const stopRecording = () => {
+      setIsRecording(false);
+      
+      const mockData = {
+        fixation_count: eyeMetrics.fixationCount + Math.random() * 20 + 50,
+        mean_saccade: Math.random() * 50 + 30,
+        max_saccade: Math.random() * 100 + 50,
+        std_saccade: Math.random() * 20 + 10,
+        mean_x: Math.random() * 200 + 400,
+        mean_y: Math.random() * 150 + 300,
+        std_x: Math.random() * 100 + 50,
+        std_y: Math.random() * 100 + 50,
+        mean_pupil: Math.random() * 2 + 3,
+        blink_rate: eyeMetrics.blinkRate,
+        gaze_stability: eyeMetrics.gazeStability / 100
+      };
+      
+      setEyeTrackingData(mockData);
+      
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setIsInitialized(false);
       }
     };
 
@@ -624,13 +660,40 @@ function App() {
                     </span>
                   </div>
                 )}
+
+                {/* Real-time metrics overlay */}
+                {isRecording && (
+                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-xs">
+                    <div>Fixations: {eyeMetrics.fixationCount}</div>
+                    <div>Saccades: {eyeMetrics.saccadeCount}</div>
+                    <div>Blink Rate: {eyeMetrics.blinkRate.toFixed(1)}/min</div>
+                    <div>Gaze Stability: {eyeMetrics.gazeStability.toFixed(1)}%</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Recording Controls */}
+              <div className="flex justify-center space-x-4 mt-4">
+                {!isRecording && !eyeTrackingData && (
+                  <Button onClick={startRecording} className="flex-1" size="lg">
+                    <Eye className="w-4 h-4 mr-2" />
+                    Start Recording
+                  </Button>
+                )}
+                
+                {isRecording && (
+                  <Button onClick={stopRecording} variant="destructive" className="flex-1" size="lg">
+                    <div className="w-4 h-4 bg-white rounded-full mr-2"></div>
+                    Stop Recording
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">Instructions</CardTitle>
+              <CardTitle className="text-xl">Instructions & Metrics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
@@ -644,22 +707,15 @@ function App() {
                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                     <span className="text-xs font-bold text-green-600">2</span>
                   </div>
-                  <p className="text-sm text-gray-700">Look naturally at the screen during the 10-second recording</p>
+                  <p className="text-sm text-gray-700">Click "Start Recording" and look naturally at the screen</p>
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                     <span className="text-xs font-bold text-green-600">3</span>
                   </div>
-                  <p className="text-sm text-gray-700">The system will analyze your gaze patterns automatically</p>
+                  <p className="text-sm text-gray-700">Recording will auto-stop after 10 seconds or click "Stop"</p>
                 </div>
               </div>
-              
-              {!eyeTrackingData && !isRecording && (
-                <Button onClick={startEyeTracking} className="w-full mt-6" size="lg">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Start Eye Tracking Analysis
-                </Button>
-              )}
 
               {eyeTrackingData && (
                 <div className="space-y-4 mt-6">
@@ -671,6 +727,26 @@ function App() {
                       {eyeTrackingData.mean_saccade.toFixed(1)}px average saccadic movements.
                     </AlertDescription>
                   </Alert>
+
+                  {/* Detailed Metrics Display */}
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-green-600">{Math.round(eyeTrackingData.fixation_count)}</div>
+                      <div className="text-xs text-green-700">Total Fixations</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-green-600">{eyeTrackingData.mean_saccade.toFixed(1)}px</div>
+                      <div className="text-xs text-green-700">Avg Saccade</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-green-600">{eyeTrackingData.blink_rate.toFixed(1)}/min</div>
+                      <div className="text-xs text-green-700">Blink Rate</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-green-600">{(eyeTrackingData.gaze_stability * 100).toFixed(1)}%</div>
+                      <div className="text-xs text-green-700">Gaze Stability</div>
+                    </div>
+                  </div>
                   
                   <Button onClick={submitEyeTracking} className="w-full" size="lg" disabled={loading}>
                     {loading ? (
