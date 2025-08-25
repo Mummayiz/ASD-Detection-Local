@@ -14,10 +14,19 @@ import base64
 import cv2
 import asyncio
 import logging
+from bson import ObjectId
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def json_encoder(obj):
+    """Custom JSON encoder for MongoDB ObjectId and datetime objects"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 app = FastAPI(
     title="ASD Detection API",
