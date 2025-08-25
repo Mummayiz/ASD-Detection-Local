@@ -779,7 +779,7 @@ function App() {
           setAssessmentData(prev => ({ ...prev, finalResult }));
         }
         
-        setCurrentStage(3);
+        setCurrentStage(4);
       } catch (err) {
         setError(err.message);
       } finally {
