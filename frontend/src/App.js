@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { Button } from './components/ui/button';
-import { Progress } from './components/ui/progress';
-import { Badge } from './components/ui/badge';
-import { Alert, AlertDescription } from './components/ui/alert';
-import { Separator } from './components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card.jsx';
+import { Button } from './components/ui/button.jsx';
+import { Progress } from './components/ui/progress.jsx';
+import { Badge } from './components/ui/badge.jsx';
+import { Alert, AlertDescription } from './components/ui/alert.jsx';
+import { Separator } from './components/ui/separator.jsx';
 import { 
   Brain, 
   Eye, 
