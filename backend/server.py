@@ -400,7 +400,8 @@ async def complete_assessment(request: CompleteAssessmentRequest):
     try:
         session_id = request.session_id
         # Retrieve all assessments for this session
-        assessments = await db.assessments.find({'session_id': session_id}).to_list(length=None)
+        assessments_cursor = db.assessments.find({'session_id': session_id})
+        assessments = await assessments_cursor.to_list(length=None)
         
         if not assessments:
             # For demo, get the latest assessments from each stage
@@ -414,14 +415,7 @@ async def complete_assessment(request: CompleteAssessmentRequest):
             raise HTTPException(status_code=404, detail="No assessments found")
         
         # Clean assessments to remove ObjectId and other non-serializable fields
-        cleaned_assessments = []
-        for assessment in assessments:
-            cleaned_assessment = {
-                'stage': assessment['stage'],
-                'result': assessment['result'],
-                'timestamp': assessment['timestamp'].isoformat() if hasattr(assessment['timestamp'], 'isoformat') else str(assessment['timestamp'])
-            }
-            cleaned_assessments.append(cleaned_assessment)
+        cleaned_assessments = [clean_mongo_doc(assessment) for assessment in assessments]
         
         # Combine predictions with weights
         stage_weights = {'behavioral': 0.6, 'eye_tracking': 0.25, 'facial_analysis': 0.15}
