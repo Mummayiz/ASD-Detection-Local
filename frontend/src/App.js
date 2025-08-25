@@ -1541,15 +1541,17 @@ function App() {
   const renderCurrentStage = () => {
     switch (currentStage) {
       case 0:
-        return <BehavioralQuestionnaire />;
+        return <IntroductionPage />;
       case 1:
-        return <EyeTrackingTest />;
+        return <BehavioralQuestionnaire />;
       case 2:
-        return <FacialAnalysisTest />;
+        return <EyeTrackingTest />;
       case 3:
+        return <FacialAnalysisTest />;
+      case 4:
         return <ResultsDisplay />;
       default:
-        return <BehavioralQuestionnaire />;
+        return <IntroductionPage />;
     }
   };
 
