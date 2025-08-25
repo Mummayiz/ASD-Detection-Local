@@ -197,7 +197,7 @@ function App() {
           ></div>
         </div>
         
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-5 gap-4">
           {stages.map((stage, index) => {
             const isActive = index === currentStage;
             const isCompleted = index < currentStage;
@@ -236,6 +236,119 @@ function App() {
       </div>
     </div>
   );
+
+  const IntroductionPage = () => {
+    return (
+      <div className="space-y-8">
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-8 border border-indigo-200">
+          <div className="flex items-center space-x-4 mb-4">
+            <Info className="w-10 h-10 text-indigo-600" />
+            <div>
+              <h2 className="text-3xl font-bold text-indigo-900">Welcome to ASD Detection Assessment</h2>
+              <p className="text-indigo-700">Multi-modal screening tool for autism spectrum conditions</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">About This Assessment</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-700">
+                This comprehensive assessment uses advanced machine learning models to analyze behavioral patterns, 
+                eye movements, and facial expressions to screen for autism spectrum disorder (ASD) indicators.
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-blue-100 text-blue-800">Evidence-Based</Badge>
+                  <span className="text-sm text-gray-600">Validated screening questionnaire</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-green-100 text-green-800">AI-Powered</Badge>
+                  <span className="text-sm text-gray-600">Computer vision analysis</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-purple-100 text-purple-800">Multi-Modal</Badge>
+                  <span className="text-sm text-gray-600">Three-stage assessment</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-xl">Assessment Stages</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <Brain className="w-6 h-6 text-blue-600 mt-1" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Behavioral Assessment</h4>
+                    <p className="text-sm text-gray-600">10 clinical questions about social interaction, communication, and behavior patterns.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Eye className="w-6 h-6 text-green-600 mt-1" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Eye Tracking Analysis</h4>
+                    <p className="text-sm text-gray-600">10-second recording to analyze gaze patterns, fixation duration, and saccadic movements.</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <Camera className="w-6 h-6 text-purple-600 mt-1" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Facial Expression Analysis</h4>
+                    <p className="text-sm text-gray-600">15-second recording to analyze facial expressions and micro-expressions.</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+          <div className="flex items-start space-x-3">
+            <AlertCircle className="w-6 h-6 text-amber-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 mb-2">Important Disclaimer</h3>
+              <p className="text-amber-800 text-sm mb-4">
+                This assessment tool is for screening purposes only and should not replace professional medical diagnosis. 
+                The results should be discussed with qualified healthcare professionals for comprehensive evaluation and diagnosis.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full"></div>
+                  <span className="text-sm text-amber-800">Ensure good lighting and camera access</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full"></div>
+                  <span className="text-sm text-amber-800">Find a quiet environment for accurate assessment</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-amber-600 rounded-full"></div>
+                  <span className="text-sm text-amber-800">Assessment takes approximately 10-15 minutes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <Button 
+            onClick={() => setCurrentStage(1)} 
+            size="lg"
+            className="px-12 py-4 bg-indigo-600 hover:bg-indigo-700 text-lg"
+          >
+            <ChevronRight className="w-5 h-5 mr-3" />
+            Begin Assessment
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   const BehavioralQuestionnaire = () => {
     const [answers, setAnswers] = useState({
