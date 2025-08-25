@@ -575,7 +575,7 @@ function App() {
         
         const result = await response.json();
         setAssessmentData(prev => ({ ...prev, eyeTracking: result }));
-        setCurrentStage(2);
+        setCurrentStage(3);
       } catch (err) {
         setError(err.message);
       } finally {
