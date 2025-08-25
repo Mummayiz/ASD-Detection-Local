@@ -1752,10 +1752,6 @@ function App() {
             <RefreshCw className="w-4 h-4 mr-2" />
             Retake Assessment
           </Button>
-          
-          <Button className="px-8 py-3 bg-green-600 hover:bg-green-700">
-            Consult with Specialist
-          </Button>
         </div>
       </div>
     );
