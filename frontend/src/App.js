@@ -44,6 +44,451 @@ function App() {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Report generation function
+  const generateReport = () => {
+    const { behavioral, eyeTracking, facialAnalysis, finalResult } = assessmentData;
+    
+    const reportData = {
+      title: "ASD Detection Assessment Report",
+      generated: new Date().toLocaleString(),
+      sessionId: sessionId,
+      patientInfo: {
+        age: behavioral?.explanation?.feature_analysis?.age?.value || 'N/A',
+        gender: behavioral?.explanation?.feature_analysis?.gender_encoded?.value === 1 ? 'Male' : 'Female'
+      },
+      summary: {
+        finalPrediction: finalResult?.final_prediction ? 'ASD Indicators Present' : 'No ASD Indicators',
+        probability: finalResult?.final_probability ? (finalResult.final_probability * 100).toFixed(1) + '%' : 'N/A',
+        confidence: finalResult?.confidence_score ? (finalResult.confidence_score * 100).toFixed(1) + '%' : 'N/A',
+        stagesCompleted: finalResult?.stages_completed || 0
+      },
+      stages: {
+        behavioral: behavioral ? {
+          prediction: behavioral.prediction ? 'ASD Indicators Present' : 'No ASD Indicators',
+          probability: (behavioral.probability * 100).toFixed(1) + '%',
+          confidence: (behavioral.confidence * 100).toFixed(1) + '%',
+          keyIndicators: behavioral.explanation?.key_indicators || [],
+          modelResults: behavioral.model_results
+        } : null,
+        eyeTracking: eyeTracking ? {
+          prediction: eyeTracking.prediction ? 'ASD Indicators Present' : 'No ASD Indicators',
+          probability: (eyeTracking.probability * 100).toFixed(1) + '%',
+          confidence: (eyeTracking.confidence * 100).toFixed(1) + '%',
+          summary: eyeTracking.explanation?.summary || 'Eye tracking analysis completed'
+        } : null,
+        facialAnalysis: facialAnalysis ? {
+          prediction: facialAnalysis.prediction ? 'ASD Indicators Present' : 'No ASD Indicators',
+          probability: (facialAnalysis.probability * 100).toFixed(1) + '%',
+          confidence: (facialAnalysis.confidence * 100).toFixed(1) + '%',
+          summary: facialAnalysis.explanation?.summary || 'Facial analysis completed'
+        } : null
+      },
+      recommendations: finalResult?.explanation?.clinical_recommendations || [],
+      disclaimer: "This assessment tool is for screening purposes only and should not replace professional medical diagnosis. Please consult with healthcare professionals for comprehensive evaluation."
+    };
+
+    return reportData;
+  };
+
+  const downloadReport = () => {
+    const reportData = generateReport();
+    
+    // Create HTML report
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>ASD Detection Report</title>
+        <style>
+          body {
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+          }
+          .logo {
+            color: #2563eb;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+          }
+          .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e293b;
+            margin: 0;
+          }
+          .subtitle {
+            color: #64748b;
+            margin: 5px 0;
+          }
+          .section {
+            margin: 30px 0;
+            padding: 20px;
+            border-left: 4px solid #e2e8f0;
+            background: #f8fafc;
+          }
+          .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 15px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+          }
+          .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+          }
+          .info-label {
+            font-weight: 600;
+            color: #475569;
+            font-size: 14px;
+            margin-bottom: 5px;
+          }
+          .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e293b;
+          }
+          .result-positive {
+            color: #ea580c;
+            background: #fed7aa;
+            padding: 4px 8px;
+            border-radius: 4px;
+          }
+          .result-negative {
+            color: #059669;
+            background: #a7f3d0;
+            padding: 4px 8px;
+            border-radius: 4px;
+          }
+          .stage-result {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+          }
+          .stage-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+          }
+          .recommendations {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+          }
+          .recommendation-item {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+          }
+          .recommendation-item:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #059669;
+            font-weight: bold;
+          }
+          .disclaimer {
+            background: #fee2e2;
+            border: 1px solid #f87171;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 30px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 12px;
+          }
+          @media print {
+            body { margin: 0; padding: 15px; }
+            .section { break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">🧠 ASD Detection System</div>
+          <h1 class="title">${reportData.title}</h1>
+          <div class="subtitle">Generated: ${reportData.generated}</div>
+          <div class="subtitle">Session ID: ${reportData.sessionId}</div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Executive Summary</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Final Assessment</div>
+              <div class="info-value ${reportData.summary.finalPrediction.includes('Present') ? 'result-positive' : 'result-negative'}">
+                ${reportData.summary.finalPrediction}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Risk Probability</div>
+              <div class="info-value">${reportData.summary.probability}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Confidence Level</div>
+              <div class="info-value">${reportData.summary.confidence}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Stages Completed</div>
+              <div class="info-value">${reportData.summary.stagesCompleted}/3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Patient Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Age</div>
+              <div class="info-value">${reportData.patientInfo.age}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Gender</div>
+              <div class="info-value">${reportData.patientInfo.gender}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Assessment Results by Stage</h2>
+          
+          ${reportData.stages.behavioral ? `
+          <div class="stage-result">
+            <h3 class="stage-title">🧠 Behavioral Assessment</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Result</div>
+                <div class="info-value ${reportData.stages.behavioral.prediction.includes('Present') ? 'result-positive' : 'result-negative'}">
+                  ${reportData.stages.behavioral.prediction}
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Probability</div>
+                <div class="info-value">${reportData.stages.behavioral.probability}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Confidence</div>
+                <div class="info-value">${reportData.stages.behavioral.confidence}</div>
+              </div>
+            </div>
+            ${reportData.stages.behavioral.keyIndicators.length > 0 ? `
+            <div style="margin-top: 15px;">
+              <strong>Key Clinical Indicators:</strong>
+              <ul>
+                ${reportData.stages.behavioral.keyIndicators.map(indicator => `<li>${indicator}</li>`).join('')}
+              </ul>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+
+          ${reportData.stages.eyeTracking ? `
+          <div class="stage-result">
+            <h3 class="stage-title">👁️ Eye Tracking Analysis</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Result</div>
+                <div class="info-value ${reportData.stages.eyeTracking.prediction.includes('Present') ? 'result-positive' : 'result-negative'}">
+                  ${reportData.stages.eyeTracking.prediction}
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Probability</div>
+                <div class="info-value">${reportData.stages.eyeTracking.probability}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Confidence</div>
+                <div class="info-value">${reportData.stages.eyeTracking.confidence}</div>
+              </div>
+            </div>
+            <p><strong>Analysis Summary:</strong> ${reportData.stages.eyeTracking.summary}</p>
+          </div>
+          ` : ''}
+
+          ${reportData.stages.facialAnalysis ? `
+          <div class="stage-result">
+            <h3 class="stage-title">📷 Facial Expression Analysis</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">Result</div>
+                <div class="info-value ${reportData.stages.facialAnalysis.prediction.includes('Present') ? 'result-positive' : 'result-negative'}">
+                  ${reportData.stages.facialAnalysis.prediction}
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Probability</div>
+                <div class="info-value">${reportData.stages.facialAnalysis.probability}</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Confidence</div>
+                <div class="info-value">${reportData.stages.facialAnalysis.confidence}</div>
+              </div>
+            </div>
+            <p><strong>Analysis Summary:</strong> ${reportData.stages.facialAnalysis.summary}</p>
+          </div>
+          ` : ''}
+        </div>
+
+        ${reportData.recommendations.length > 0 ? `
+        <div class="section">
+          <h2 class="section-title">Clinical Recommendations</h2>
+          <div class="recommendations">
+            ${reportData.recommendations.map(rec => `
+              <div class="recommendation-item">${rec}</div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        <div class="disclaimer">
+          <strong>Medical Disclaimer:</strong> ${reportData.disclaimer}
+        </div>
+
+        <div class="footer">
+          <p>Report generated by ASD Detection System v1.0</p>
+          <p>For questions about this report, please consult with your healthcare provider.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create and download the file
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ASD_Assessment_Report_${sessionId}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const printReport = () => {
+    const reportData = generateReport();
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>ASD Detection Report - Print</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+            color: #333;
+            margin: 20px;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+          }
+          .title { font-size: 24px; font-weight: bold; margin: 10px 0; }
+          .section { margin: 20px 0; page-break-inside: avoid; }
+          .section-title { font-size: 18px; font-weight: bold; margin: 15px 0 10px 0; }
+          .info-grid { display: flex; flex-wrap: wrap; gap: 15px; }
+          .info-item { border: 1px solid #ccc; padding: 10px; min-width: 150px; }
+          .info-label { font-weight: bold; font-size: 12px; }
+          .info-value { font-size: 14px; margin-top: 5px; }
+          .stage-result { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+          .recommendation-item { margin: 5px 0; }
+          .disclaimer { background: #f5f5f5; padding: 10px; border: 1px solid #ccc; margin-top: 20px; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">ASD Detection Assessment Report</div>
+          <div>Generated: ${reportData.generated}</div>
+          <div>Session: ${reportData.sessionId}</div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Executive Summary</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Final Assessment</div>
+              <div class="info-value">${reportData.summary.finalPrediction}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Risk Probability</div>
+              <div class="info-value">${reportData.summary.probability}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Confidence</div>
+              <div class="info-value">${reportData.summary.confidence}</div>
+            </div>
+          </div>
+        </div>
+
+        ${reportData.stages.behavioral ? `
+        <div class="section">
+          <div class="section-title">Behavioral Assessment</div>
+          <div class="stage-result">
+            <strong>Result:</strong> ${reportData.stages.behavioral.prediction}<br>
+            <strong>Probability:</strong> ${reportData.stages.behavioral.probability}<br>
+            <strong>Confidence:</strong> ${reportData.stages.behavioral.confidence}
+          </div>
+        </div>
+        ` : ''}
+
+        ${reportData.recommendations.length > 0 ? `
+        <div class="section">
+          <div class="section-title">Clinical Recommendations</div>
+          ${reportData.recommendations.map(rec => `<div class="recommendation-item">• ${rec}</div>`).join('')}
+        </div>
+        ` : ''}
+
+        <div class="disclaimer">
+          <strong>Medical Disclaimer:</strong> ${reportData.disclaimer}
+        </div>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
   const stages = [
     { name: 'Behavioral Assessment', icon: Brain, color: 'blue', description: 'Clinical questionnaire analysis' },
     { name: 'Eye Tracking', icon: Eye, color: 'green', description: 'Gaze pattern analysis' },
