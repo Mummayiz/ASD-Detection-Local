@@ -57,8 +57,8 @@ class ASDBackendTester:
             self.log_test("API Health Endpoint", False, str(e))
     
     def test_behavioral_assessment(self):
-        """Test behavioral assessment endpoint"""
-        print("\n🧠 Testing Behavioral Assessment...")
+        """Test behavioral assessment endpoint with standard binary values"""
+        print("\n🧠 Testing Behavioral Assessment (Binary Values)...")
         
         # Test data - simulating a user with some ASD indicators
         test_data = {
@@ -97,13 +97,86 @@ class ASDBackendTester:
                     print(f"   RF Prediction: {result['model_results']['random_forest']['prediction']}")
                     print(f"   SVM Prediction: {result['model_results']['svm']['prediction']}")
                     
+                    # Check for PSO results
+                    if 'pso' in result['model_results']:
+                        pso_result = result['model_results']['pso']
+                        print(f"   PSO Prediction: {pso_result['prediction']}")
+                        print(f"   PSO Probability: {pso_result['probability']:.3f}")
+                        print(f"   PSO Weights: {pso_result['weights']}")
+                        success = success and 'weights' in pso_result
+                    else:
+                        print("   ❌ PSO results missing from model_results")
+                        success = False
+                    
                     # Store result for later use
                     self.behavioral_result = result
                     
-            self.log_test("Behavioral Assessment", success, f"Status: {response.status_code}")
+            self.log_test("Behavioral Assessment (Binary)", success, f"Status: {response.status_code}")
             
         except Exception as e:
-            self.log_test("Behavioral Assessment", False, str(e))
+            self.log_test("Behavioral Assessment (Binary)", False, str(e))
+
+    def test_behavioral_assessment_with_neutral_values(self):
+        """Test behavioral assessment endpoint with neutral values (0.5)"""
+        print("\n🧠 Testing Behavioral Assessment (With Neutral Values)...")
+        
+        # Test data with neutral values mixed in - this is the key new feature to test
+        test_data = {
+            "A1_Score": 0.5,  # Neutral - sometimes challenging in social situations
+            "A2_Score": 0,    # No communication difficulty
+            "A3_Score": 1,    # Repetitive behaviors
+            "A4_Score": 0.5,  # Neutral - sometimes prefer routine
+            "A5_Score": 1,    # Focus intensely on interests
+            "A6_Score": 0.5,  # Neutral - some sensory sensitivity
+            "A7_Score": 0,    # No delayed language
+            "A8_Score": 0.5,  # Neutral - some motor skill concerns
+            "A9_Score": 1,    # Hard to adapt to changes
+            "A10_Score": 0.5, # Neutral - some emotion regulation issues
+            "age": 25.0,
+            "gender": "f"
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/assessment/behavioral",
+                json=test_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=15
+            )
+            
+            success = response.status_code == 200
+            if success:
+                result = response.json()
+                required_keys = ['prediction', 'probability', 'confidence', 'model_results', 'explanation', 'stage']
+                success = all(key in result for key in required_keys)
+                
+                if success:
+                    print(f"   Prediction: {result['prediction']} (ASD: {result['prediction'] == 1})")
+                    print(f"   Probability: {result['probability']:.3f}")
+                    print(f"   Confidence: {result['confidence']:.3f}")
+                    
+                    # Verify PSO integration is working with neutral values
+                    if 'pso' in result['model_results']:
+                        pso_result = result['model_results']['pso']
+                        print(f"   PSO Prediction: {pso_result['prediction']}")
+                        print(f"   PSO Probability: {pso_result['probability']:.3f}")
+                        print(f"   PSO Weights: {pso_result['weights']}")
+                        
+                        # Verify PSO weights are valid (should sum to ~1.0)
+                        weights_sum = sum(pso_result['weights'])
+                        print(f"   PSO Weights Sum: {weights_sum:.3f}")
+                        success = success and abs(weights_sum - 1.0) < 0.1
+                    else:
+                        print("   ❌ PSO results missing from model_results")
+                        success = False
+                    
+                    # Store result for comparison
+                    self.behavioral_neutral_result = result
+                    
+            self.log_test("Behavioral Assessment (Neutral Values)", success, f"Status: {response.status_code}")
+            
+        except Exception as e:
+            self.log_test("Behavioral Assessment (Neutral Values)", False, str(e))
     
     def test_eye_tracking_assessment(self):
         """Test eye tracking assessment endpoint"""
