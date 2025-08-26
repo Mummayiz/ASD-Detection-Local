@@ -75,24 +75,24 @@ encoders = {}
 
 class BehavioralAssessment(BaseModel):
     """Behavioral questionnaire data"""
-    A1_Score: int  # Social responsiveness
-    A2_Score: int  # Communication patterns
-    A3_Score: int  # Repetitive behaviors
-    A4_Score: int  # Social interaction
-    A5_Score: int  # Attention to detail
-    A6_Score: int  # Sensory sensitivity
-    A7_Score: int  # Language development
-    A8_Score: int  # Motor skills
-    A9_Score: int  # Behavioral flexibility
-    A10_Score: int  # Emotional regulation
+    A1_Score: float  # Social responsiveness - now supports 0, 0.5, 1
+    A2_Score: float  # Communication patterns
+    A3_Score: float  # Repetitive behaviors
+    A4_Score: float  # Social interaction
+    A5_Score: float  # Attention to detail
+    A6_Score: float  # Sensory sensitivity
+    A7_Score: float  # Language development
+    A8_Score: float  # Motor skills
+    A9_Score: float  # Behavioral flexibility
+    A10_Score: float  # Emotional regulation
     age: float
     gender: str  # 'f' or 'm'
     
     @validator('A1_Score', 'A2_Score', 'A3_Score', 'A4_Score', 'A5_Score', 
               'A6_Score', 'A7_Score', 'A8_Score', 'A9_Score', 'A10_Score')
     def validate_scores(cls, v):
-        if v not in [0, 1]:
-            raise ValueError('Scores must be 0 or 1')
+        if v not in [0, 0.5, 1]:
+            raise ValueError('Scores must be 0, 0.5, or 1')
         return v
     
     @validator('age')
