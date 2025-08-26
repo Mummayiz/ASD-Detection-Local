@@ -119,6 +119,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Comprehensive testing completed successfully. API accepts behavioral questionnaire data (A1-A10 scores, age, gender), returns proper ML predictions with ensemble of Random Forest and SVM models. Validation working correctly for invalid scores/age/gender. MongoDB storage confirmed. Response includes prediction, probability, confidence, model results, and detailed explanations."
+      - working: true
+        agent: "testing"
+        comment: "PSO INTEGRATION VERIFIED: Behavioral assessment now successfully uses PSO optimization for ensemble weighting. Tested with neutral values (0.5) - all working perfectly. PSO weights are properly normalized (sum to 1.0), PSO predictions included in model_results response. Neutral values (0, 0.5, 1) validation working correctly. Updated dataset compatibility confirmed with autism_behavioral.csv structure."
 
   - task: "Eye Tracking Assessment API"
     implemented: true
@@ -134,6 +137,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Eye tracking assessment API fully functional. Accepts eye tracking metrics (fixation_count, saccade measurements, gaze positions, pupil data), processes through trained ML models, returns predictions with confidence scores. Feature importance analysis working. MongoDB storage confirmed. Proper error handling for missing models."
+      - working: true
+        agent: "testing"
+        comment: "PSO INTEGRATION VERIFIED: Eye tracking assessment now includes PSO optimization for ensemble predictions. PSO weights properly normalized, PSO results included in model_results response with weights array. Tested multiple scenarios - PSO optimization working correctly across different input patterns."
 
   - task: "Facial Analysis Assessment API"
     implemented: true
@@ -149,6 +155,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Facial analysis API working correctly. Processes facial features, emotion scores, and attention patterns. Handles empty data gracefully. Returns predictions based on attention to faces, emotion variability, and facial feature analysis. MongoDB storage confirmed. Proper response structure with explanations."
+      - working: true
+        agent: "testing"
+        comment: "Facial analysis continues to work correctly. No PSO integration needed for this endpoint as it uses rule-based analysis rather than ML ensemble. Maintains compatibility with overall assessment pipeline."
 
   - task: "Complete Assessment API"
     implemented: true
@@ -164,6 +173,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "Complete assessment API fully functional. Successfully combines results from all three assessment stages (behavioral, eye tracking, facial analysis) with proper weighting (60% behavioral, 25% eye tracking, 15% facial). Returns final prediction, probability, confidence score, stage contributions, and comprehensive clinical recommendations. Handles missing stage data gracefully."
+      - working: true
+        agent: "testing"
+        comment: "Complete assessment API verified with PSO-enhanced predictions. Successfully integrates PSO-optimized results from behavioral and eye tracking stages. Final ensemble weighting working correctly. All response structures maintained with enhanced PSO data included."
 
 frontend:
   - task: "Fix blank page error"
