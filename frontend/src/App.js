@@ -349,33 +349,63 @@ function App() {
 
   const BehavioralQuestionnaire = () => {
     const [answers, setAnswers] = useState({
-      A1_Score: 0, A2_Score: 0, A3_Score: 0, A4_Score: 0, A5_Score: 0,
-      A6_Score: 0, A7_Score: 0, A8_Score: 0, A9_Score: 0, A10_Score: 0,
+      A1_Score: null, A2_Score: null, A3_Score: null, A4_Score: null, A5_Score: null,
+      A6_Score: null, A7_Score: null, A8_Score: null, A9_Score: null, A10_Score: null,
       age: 25, gender: 'm'
     });
 
     const questions = [
-      { key: 'A1_Score', text: 'Do you find social situations challenging?', category: 'Social Interaction' },
-      { key: 'A2_Score', text: 'Do you have difficulty with verbal communication?', category: 'Communication' },
-      { key: 'A3_Score', text: 'Do you engage in repetitive behaviors or movements?', category: 'Repetitive Behaviors' },
-      { key: 'A4_Score', text: 'Do you prefer routine and predictability?', category: 'Behavioral Patterns' },
-      { key: 'A5_Score', text: 'Do you focus intensely on specific interests?', category: 'Attention & Focus' },
-      { key: 'A6_Score', text: 'Are you sensitive to sounds, lights, or textures?', category: 'Sensory Processing' },
-      { key: 'A7_Score', text: 'Did you have delayed language development?', category: 'Language Development' },
-      { key: 'A8_Score', text: 'Do you have coordination or motor skill challenges?', category: 'Motor Skills' },
-      { key: 'A9_Score', text: 'Do you find it hard to adapt to changes?', category: 'Flexibility' },
-      { key: 'A10_Score', text: 'Do you have difficulty regulating emotions?', category: 'Emotional Regulation' }
+      { key: 'A1_Score', text: 'Do you often notice small sounds when others do not?', category: 'Sensory Processing' },
+      { key: 'A2_Score', text: 'Do you usually concentrate more on the whole picture, rather than the small details?', category: 'Attention to Detail' },
+      { key: 'A3_Score', text: 'Do you find it easy to do more than one thing at once?', category: 'Task Management' },
+      { key: 'A4_Score', text: 'If there is an interruption, can you switch back to what you were doing very quickly?', category: 'Flexibility' },
+      { key: 'A5_Score', text: 'Do you find it easy to "read between the lines" when someone is talking to you?', category: 'Social Communication' },
+      { key: 'A6_Score', text: 'Do you know how to tell if someone listening to you is getting bored?', category: 'Social Awareness' },
+      { key: 'A7_Score', text: 'When you were a child, did you enjoy cutting out dolls or cars?', category: 'Childhood Interests' },
+      { key: 'A8_Score', text: 'Do you find it difficult to imagine what it would be like to be someone else?', category: 'Theory of Mind' },
+      { key: 'A9_Score', text: 'Do you like to collect information about categories of things?', category: 'Special Interests' },
+      { key: 'A10_Score', text: 'Do you find it difficult to understand what people mean when they say something has a "hidden meaning"?', category: 'Language Understanding' }
     ];
 
+    // Convert UI values to backend format (0 = No, 1 = Yes, 0.5 = Neutral)
+    const convertAnswerValue = (uiValue) => {
+      if (uiValue === 'yes') return 1;
+      if (uiValue === 'no') return 0;
+      if (uiValue === 'neutral') return 0.5;
+      return null;
+    };
+
     const handleSubmit = async () => {
+      // Check if all questions are answered
+      const unansweredQuestions = questions.filter(q => answers[q.key] === null);
+      if (unansweredQuestions.length > 0) {
+        setError('Please answer all questions before proceeding.');
+        return;
+      }
+
       setLoading(true);
       setError(null);
       
       try {
+        // Convert answers to backend format
+        const backendAnswers = {
+          ...answers,
+          A1_Score: convertAnswerValue(answers.A1_Score),
+          A2_Score: convertAnswerValue(answers.A2_Score),
+          A3_Score: convertAnswerValue(answers.A3_Score),
+          A4_Score: convertAnswerValue(answers.A4_Score),
+          A5_Score: convertAnswerValue(answers.A5_Score),
+          A6_Score: convertAnswerValue(answers.A6_Score),
+          A7_Score: convertAnswerValue(answers.A7_Score),
+          A8_Score: convertAnswerValue(answers.A8_Score),
+          A9_Score: convertAnswerValue(answers.A9_Score),
+          A10_Score: convertAnswerValue(answers.A10_Score)
+        };
+
         const response = await fetch(`${BACKEND_URL}/api/assessment/behavioral`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(answers)
+          body: JSON.stringify(backendAnswers)
         });
         
         if (!response.ok) throw new Error('Assessment failed');
@@ -389,6 +419,8 @@ function App() {
         setLoading(false);
       }
     };
+
+    const isAllAnswered = questions.every(q => answers[q.key] !== null);
 
     return (
       <div className="space-y-8">
@@ -413,27 +445,40 @@ function App() {
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-6">{q.text}</h3>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <Button
-                      variant={answers[q.key] === 1 ? "default" : "outline"}
-                      onClick={() => setAnswers(prev => ({ ...prev, [q.key]: 1 }))}
-                      className={`h-16 ${answers[q.key] === 1 ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
+                      variant={answers[q.key] === 'yes' ? "default" : "outline"}
+                      onClick={() => setAnswers(prev => ({ ...prev, [q.key]: 'yes' }))}
+                      className={`h-16 ${answers[q.key] === 'yes' ? 'bg-green-600 hover:bg-green-700' : ''}`}
                     >
                       <CheckCircle className="w-5 h-5 mr-3" />
                       <div className="text-left">
                         <div className="font-semibold">Yes</div>
-                        <div className="text-sm opacity-75">This applies to me</div>
+                        <div className="text-sm opacity-75">Definitely applies</div>
                       </div>
                     </Button>
+                    
                     <Button
-                      variant={answers[q.key] === 0 ? "default" : "outline"}
-                      onClick={() => setAnswers(prev => ({ ...prev, [q.key]: 0 }))}
-                      className={`h-16 ${answers[q.key] === 0 ? 'bg-gray-600 hover:bg-gray-700' : ''}`}
+                      variant={answers[q.key] === 'neutral' ? "default" : "outline"}
+                      onClick={() => setAnswers(prev => ({ ...prev, [q.key]: 'neutral' }))}
+                      className={`h-16 ${answers[q.key] === 'neutral' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}`}
+                    >
+                      <Activity className="w-5 h-5 mr-3" />
+                      <div className="text-left">
+                        <div className="font-semibold">Neutral</div>
+                        <div className="text-sm opacity-75">Sometimes applies</div>
+                      </div>
+                    </Button>
+                    
+                    <Button
+                      variant={answers[q.key] === 'no' ? "default" : "outline"}
+                      onClick={() => setAnswers(prev => ({ ...prev, [q.key]: 'no' }))}
+                      className={`h-16 ${answers[q.key] === 'no' ? 'bg-gray-600 hover:bg-gray-700' : ''}`}
                     >
                       <Activity className="w-5 h-5 mr-3" />
                       <div className="text-left">
                         <div className="font-semibold">No</div>
-                        <div className="text-sm opacity-75">This does not apply</div>
+                        <div className="text-sm opacity-75">Does not apply</div>
                       </div>
                     </Button>
                   </div>
@@ -479,12 +524,18 @@ function App() {
           </div>
         </div>
 
-        <div className="bg-green-50 rounded-xl p-8 border border-green-200 text-center">
+        <div className={`rounded-xl p-8 border text-center ${isAllAnswered ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+          {!isAllAnswered && (
+            <div className="mb-4">
+              <p className="text-amber-800 text-sm">Please answer all questions to proceed with the assessment.</p>
+            </div>
+          )}
+          
           <Button 
             onClick={handleSubmit} 
-            disabled={loading}
+            disabled={loading || !isAllAnswered}
             size="lg"
-            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-lg"
+            className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-lg disabled:opacity-50"
           >
             {loading ? (
               <>
