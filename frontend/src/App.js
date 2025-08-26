@@ -1748,10 +1748,10 @@ function App() {
               </div>
             </div>
 
-            {/* Ensemble */}
+            {/* PSO */}
             <div className="border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-bold text-gray-900">Ensemble</h4>
+                <h4 className="text-lg font-bold text-gray-900">PSO</h4>
                 <div className="flex items-center space-x-2">
                   <span className="text-blue-600 font-bold">45.0%</span>
                   <span className="text-sm text-gray-600">93.7% acc</span>
@@ -1761,9 +1761,9 @@ function App() {
               <div className="mb-4">
                 <span className="text-sm text-gray-600 mb-2 block">Key Features:</span>
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-gray-100 text-gray-700">Combined multi-modal features</Badge>
-                  <Badge className="bg-gray-100 text-gray-700">Cross-validated patterns</Badge>
-                  <Badge className="bg-gray-100 text-gray-700">Weighted consensus</Badge>
+                  <Badge className="bg-gray-100 text-gray-700">Optimized multi-modal features</Badge>
+                  <Badge className="bg-gray-100 text-gray-700">Behavioral & eye tracking patterns</Badge>
+                  <Badge className="bg-gray-100 text-gray-700">Swarm intelligence</Badge>
                 </div>
               </div>
 
