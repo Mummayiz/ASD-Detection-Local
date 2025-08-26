@@ -179,8 +179,8 @@ class ASDBackendTester:
             self.log_test("Behavioral Assessment (Neutral Values)", False, str(e))
     
     def test_eye_tracking_assessment(self):
-        """Test eye tracking assessment endpoint"""
-        print("\n👁️ Testing Eye Tracking Assessment...")
+        """Test eye tracking assessment endpoint with PSO optimization"""
+        print("\n👁️ Testing Eye Tracking Assessment (PSO Integration)...")
         
         # Mock eye tracking data
         test_data = {
@@ -216,6 +216,21 @@ class ASDBackendTester:
                     print(f"   Probability: {result['probability']:.3f}")
                     print(f"   Confidence: {result['confidence']:.3f}")
                     
+                    # Verify PSO integration for eye tracking
+                    if 'pso' in result['model_results']:
+                        pso_result = result['model_results']['pso']
+                        print(f"   PSO Prediction: {pso_result['prediction']}")
+                        print(f"   PSO Probability: {pso_result['probability']:.3f}")
+                        print(f"   PSO Weights: {pso_result['weights']}")
+                        
+                        # Verify PSO weights are valid
+                        weights_sum = sum(pso_result['weights'])
+                        print(f"   PSO Weights Sum: {weights_sum:.3f}")
+                        success = success and abs(weights_sum - 1.0) < 0.1
+                    else:
+                        print("   ❌ PSO results missing from model_results")
+                        success = False
+                    
                     # Store result for later use
                     self.eye_tracking_result = result
                     
@@ -223,10 +238,10 @@ class ASDBackendTester:
                 print("   Eye tracking models not available (expected for demo)")
                 self.eye_tracking_result = None
                 
-            self.log_test("Eye Tracking Assessment", success, f"Status: {response.status_code}")
+            self.log_test("Eye Tracking Assessment (PSO)", success, f"Status: {response.status_code}")
             
         except Exception as e:
-            self.log_test("Eye Tracking Assessment", False, str(e))
+            self.log_test("Eye Tracking Assessment (PSO)", False, str(e))
     
     def test_facial_analysis_assessment(self):
         """Test facial analysis assessment endpoint"""
