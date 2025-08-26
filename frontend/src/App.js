@@ -1611,7 +1611,7 @@ function App() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="text-lg text-gray-700">Ensemble</span>
+                  <span className="text-lg text-gray-700">PSO</span>
                   <div className="flex items-center space-x-3">
                     <div className="w-32 bg-gray-200 rounded-full h-3">
                       <div className="bg-blue-500 h-3 rounded-full" style={{ width: '93.7%' }}></div>
