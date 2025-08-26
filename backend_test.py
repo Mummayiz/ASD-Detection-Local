@@ -333,11 +333,13 @@ class ASDBackendTester:
         """Test API error handling with invalid data"""
         print("\n⚠️ Testing Error Handling...")
         
-        # Test behavioral with invalid data
+        # Test behavioral with invalid data (should reject values outside 0, 0.5, 1)
         invalid_data = {
-            "A1_Score": 2,  # Invalid score (should be 0 or 1)
-            "age": -5,      # Invalid age
-            "gender": "x"   # Invalid gender
+            "A1_Score": 2,    # Invalid score (should be 0, 0.5, or 1)
+            "A2_Score": -1,   # Invalid score (negative)
+            "A3_Score": 0.3,  # Invalid score (not 0, 0.5, or 1)
+            "age": -5,        # Invalid age
+            "gender": "x"     # Invalid gender
         }
         
         try:
@@ -354,6 +356,53 @@ class ASDBackendTester:
             
         except Exception as e:
             self.log_test("Error Handling - Invalid Data", False, str(e))
+
+    def test_neutral_values_validation(self):
+        """Test that neutral values (0.5) are properly accepted"""
+        print("\n🔍 Testing Neutral Values Validation...")
+        
+        # Test data with all neutral values
+        neutral_data = {
+            "A1_Score": 0.5,
+            "A2_Score": 0.5,
+            "A3_Score": 0.5,
+            "A4_Score": 0.5,
+            "A5_Score": 0.5,
+            "A6_Score": 0.5,
+            "A7_Score": 0.5,
+            "A8_Score": 0.5,
+            "A9_Score": 0.5,
+            "A10_Score": 0.5,
+            "age": 30.0,
+            "gender": "f"
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/assessment/behavioral",
+                json=neutral_data,
+                headers={'Content-Type': 'application/json'},
+                timeout=15
+            )
+            
+            success = response.status_code == 200
+            if success:
+                result = response.json()
+                print(f"   All Neutral Values Accepted: ✅")
+                print(f"   Prediction: {result['prediction']}")
+                print(f"   Probability: {result['probability']:.3f}")
+                
+                # Verify PSO still works with all neutral values
+                if 'pso' in result['model_results']:
+                    print(f"   PSO Working with Neutral Values: ✅")
+                else:
+                    print(f"   PSO Missing with Neutral Values: ❌")
+                    success = False
+                    
+            self.log_test("Neutral Values Validation", success, f"Status: {response.status_code}")
+            
+        except Exception as e:
+            self.log_test("Neutral Values Validation", False, str(e))
     
     def run_all_tests(self):
         """Run all backend tests"""
