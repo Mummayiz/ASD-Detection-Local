@@ -10,11 +10,14 @@ import motor.motor_asyncio
 from datetime import datetime
 import json
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 import base64
 import cv2
 import asyncio
 import logging
 from bson import ObjectId
+import random
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
