@@ -76,6 +76,145 @@ models = {}
 scalers = {}
 encoders = {}
 
+class PSO:
+    """Particle Swarm Optimization for feature selection and model optimization"""
+    
+    def __init__(self, n_particles=20, n_iterations=50, w=0.5, c1=1.5, c2=1.5):
+        self.n_particles = n_particles
+        self.n_iterations = n_iterations
+        self.w = w  # inertia weight
+        self.c1 = c1  # cognitive parameter
+        self.c2 = c2  # social parameter
+        
+    def optimize_features(self, X, y, model_type='rf'):
+        """Optimize feature selection using PSO"""
+        n_features = X.shape[1]
+        
+        # Initialize particles (binary encoding for feature selection)
+        particles = np.random.randint(0, 2, (self.n_particles, n_features))
+        velocities = np.random.uniform(-1, 1, (self.n_particles, n_features))
+        
+        # Track best positions
+        personal_best = particles.copy()
+        personal_best_scores = np.full(self.n_particles, -np.inf)
+        global_best = particles[0].copy()
+        global_best_score = -np.inf
+        
+        for iteration in range(self.n_iterations):
+            for i in range(self.n_particles):
+                # Evaluate fitness (model accuracy with selected features)
+                selected_features = particles[i] == 1
+                if np.sum(selected_features) == 0:  # At least one feature must be selected
+                    selected_features[0] = True
+                
+                score = self._evaluate_features(X[:, selected_features], y, model_type)
+                
+                # Update personal best
+                if score > personal_best_scores[i]:
+                    personal_best_scores[i] = score
+                    personal_best[i] = particles[i].copy()
+                
+                # Update global best
+                if score > global_best_score:
+                    global_best_score = score
+                    global_best = particles[i].copy()
+            
+            # Update velocities and positions
+            for i in range(self.n_particles):
+                r1, r2 = np.random.random(n_features), np.random.random(n_features)
+                
+                velocities[i] = (self.w * velocities[i] + 
+                               self.c1 * r1 * (personal_best[i] - particles[i]) + 
+                               self.c2 * r2 * (global_best - particles[i]))
+                
+                # Update positions using sigmoid function for binary encoding
+                sigmoid_v = 1 / (1 + np.exp(-velocities[i]))
+                particles[i] = (np.random.random(n_features) < sigmoid_v).astype(int)
+        
+        return global_best, global_best_score
+    
+    def _evaluate_features(self, X, y, model_type):
+        """Evaluate feature subset using cross-validation"""
+        if X.shape[1] == 0:
+            return 0
+            
+        try:
+            if model_type == 'rf':
+                model = RandomForestClassifier(n_estimators=10, random_state=42)
+            else:
+                model = SVC(random_state=42)
+            
+            # Simple train-test split for speed
+            split_idx = int(0.8 * len(X))
+            X_train, X_test = X[:split_idx], X[split_idx:]
+            y_train, y_test = y[:split_idx], y[split_idx:]
+            
+            if len(np.unique(y_train)) < 2:  # Not enough classes
+                return 0
+                
+            model.fit(X_train, y_train)
+            score = model.score(X_test, y_test)
+            return score
+        except:
+            return 0
+
+    def optimize_prediction(self, predictions, weights=None):
+        """Optimize final prediction using PSO ensemble weighting"""
+        if weights is None:
+            weights = np.random.random(len(predictions))
+            weights = weights / np.sum(weights)
+        
+        # Use PSO to find optimal weights for ensemble
+        n_models = len(predictions)
+        particles = np.random.random((self.n_particles, n_models))
+        # Normalize weights
+        particles = particles / particles.sum(axis=1, keepdims=True)
+        
+        velocities = np.random.uniform(-0.1, 0.1, (self.n_particles, n_models))
+        
+        personal_best = particles.copy()
+        personal_best_scores = np.full(self.n_particles, -np.inf)
+        global_best = particles[0].copy()
+        global_best_score = -np.inf
+        
+        for iteration in range(min(self.n_iterations, 20)):  # Fewer iterations for speed
+            for i in range(self.n_particles):
+                # Calculate weighted ensemble prediction
+                ensemble_pred = np.average(predictions, weights=particles[i])
+                
+                # Simple fitness: diversity + accuracy proxy
+                score = self._ensemble_fitness(predictions, particles[i], ensemble_pred)
+                
+                if score > personal_best_scores[i]:
+                    personal_best_scores[i] = score
+                    personal_best[i] = particles[i].copy()
+                
+                if score > global_best_score:
+                    global_best_score = score
+                    global_best = particles[i].copy()
+            
+            # Update particles
+            for i in range(self.n_particles):
+                r1, r2 = np.random.random(n_models), np.random.random(n_models)
+                
+                velocities[i] = (self.w * velocities[i] + 
+                               self.c1 * r1 * (personal_best[i] - particles[i]) + 
+                               self.c2 * r2 * (global_best - particles[i]))
+                
+                particles[i] += velocities[i]
+                # Normalize weights
+                particles[i] = np.abs(particles[i])
+                particles[i] = particles[i] / np.sum(particles[i])
+        
+        return global_best, global_best_score
+    
+    def _ensemble_fitness(self, predictions, weights, ensemble_pred):
+        """Calculate fitness for ensemble weights"""
+        # Combine accuracy proxy with diversity
+        diversity = np.std([pred * weight for pred, weight in zip(predictions, weights)])
+        confidence = abs(ensemble_pred - 0.5)  # Distance from uncertainty
+        return confidence + 0.1 * diversity
+
 class BehavioralAssessment(BaseModel):
     """Behavioral questionnaire data"""
     A1_Score: float  # Social responsiveness - now supports 0, 0.5, 1
