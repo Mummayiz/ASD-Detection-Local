@@ -407,12 +407,15 @@ class ASDBackendTester:
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting ASD Detection System Backend Tests")
+        print("🔬 Focus: PSO Integration & Neutral Values (0.5) Support")
         print(f"Testing against: {self.base_url}")
         print("=" * 60)
         
         # Run all test suites
         self.test_health_endpoints()
         self.test_behavioral_assessment()
+        self.test_behavioral_assessment_with_neutral_values()
+        self.test_neutral_values_validation()
         self.test_eye_tracking_assessment()
         self.test_facial_analysis_assessment()
         self.test_complete_assessment()
@@ -428,6 +431,9 @@ class ASDBackendTester:
         
         if self.tests_passed == self.tests_run:
             print("🎉 All tests passed! Backend is working correctly.")
+            print("✅ PSO Integration: Working")
+            print("✅ Neutral Values (0.5): Supported")
+            print("✅ Updated Dataset Compatibility: Verified")
             return 0
         else:
             print("❌ Some tests failed. Check the details above.")
