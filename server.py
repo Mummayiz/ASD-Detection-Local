@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, validator
 from typing import List, Dict, Optional, Any
 import joblib
@@ -15,18 +17,20 @@ from sklearn.svm import SVC
 import base64
 import cv2
 
-# --- LOCAL_MODELS_PATH_PATCH START ---
+# --- RAILWAY_DEPLOYMENT_PATCH START ---
 import os
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-MODEL_DIR = os.environ.get('MODEL_DIR', os.path.join(BASE_DIR, 'models'))
-# Wrap joblib.load so '/app/models/xxx' -> local MODEL_DIR/xxx when running locally
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, 'models')
+
+# Wrap joblib.load for Railway deployment
 _original_joblib_load = joblib.load
 def _joblib_load_wrapper(path, *args, **kwargs):
     if isinstance(path, str) and path.startswith('/app/models/'):
         path = os.path.join(MODEL_DIR, path.replace('/app/models/', ''))
     return _original_joblib_load(path, *args, **kwargs)
 joblib.load = _joblib_load_wrapper
-# --- LOCAL_MODELS_PATH_PATCH END ---
+# --- RAILWAY_DEPLOYMENT_PATCH END ---
+
 import asyncio
 import logging
 from bson import ObjectId
@@ -71,6 +75,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS middleware for Railway deployment
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -79,7 +84,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database connection
+# Database connection - Railway will provide MONGO_URL
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
 db = client.asd_detection
@@ -298,18 +303,18 @@ async def load_models():
     
     try:
         # Load behavioral models
-        models['behavioral_rf'] = joblib.load('/app/models/behavioral_rf_model.joblib')
-        models['behavioral_svm'] = joblib.load('/app/models/behavioral_svm_model.joblib')
-        scalers['behavioral'] = joblib.load('/app/models/behavioral_scaler.joblib')
-        encoders['behavioral'] = joblib.load('/app/models/behavioral_label_encoder.joblib')
+        models['behavioral_rf'] = joblib.load('models/behavioral_rf_model.joblib')
+        models['behavioral_svm'] = joblib.load('models/behavioral_svm_model.joblib')
+        scalers['behavioral'] = joblib.load('models/behavioral_scaler.joblib')
+        encoders['behavioral'] = joblib.load('models/behavioral_label_encoder.joblib')
         
         logger.info("Behavioral models loaded successfully")
         
         # Load eye tracking models if available
-        if os.path.exists('/app/models/eye_tracking_rf_model.joblib'):
-            models['eye_tracking_rf'] = joblib.load('/app/models/eye_tracking_rf_model.joblib')
-            models['eye_tracking_svm'] = joblib.load('/app/models/eye_tracking_svm_model.joblib')
-            scalers['eye_tracking'] = joblib.load('/app/models/eye_tracking_scaler.joblib')
+        if os.path.exists('models/eye_tracking_rf_model.joblib'):
+            models['eye_tracking_rf'] = joblib.load('models/eye_tracking_rf_model.joblib')
+            models['eye_tracking_svm'] = joblib.load('models/eye_tracking_svm_model.joblib')
+            scalers['eye_tracking'] = joblib.load('models/eye_tracking_scaler.joblib')
             logger.info("Eye tracking models loaded successfully")
         
         logger.info("All models loaded successfully")
@@ -318,9 +323,15 @@ async def load_models():
         logger.error(f"Error loading models: {str(e)}")
         raise e
 
+# Serve static files from frontend build
+if os.path.exists('frontend/build'):
+    app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
+
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Serve the React app"""
+    if os.path.exists('frontend/build/index.html'):
+        return FileResponse('frontend/build/index.html')
     return {
         "message": "ASD Detection API",
         "version": "1.0.0",
@@ -743,67 +754,6 @@ def generate_facial_explanation(prediction, score, data):
     
     return explanation
 
-def generate_comprehensive_explanation(prediction, probability, stage_results):
-    """Generate comprehensive explanation combining all stages"""
-    result_text = "indicates ASD" if prediction else "does not indicate ASD"
-    confidence_level = "high" if abs(probability - 0.5) > 0.3 else "moderate"
-    
-    explanation = {
-        'overall_result': f"Multi-stage assessment {result_text} with {confidence_level} confidence",
-        'stage_contributions': {},
-        'key_findings': [],
-        'clinical_recommendations': [],
-        'next_steps': []
-    }
-    
-    # Analyze each stage contribution
-    for stage, result in stage_results.items():
-        stage_pred = result.get('prediction', 0)
-        stage_prob = result.get('probability', 0.5)
-        
-        explanation['stage_contributions'][stage] = {
-            'prediction': 'ASD indicated' if stage_pred else 'ASD not indicated',
-            'confidence': abs(stage_prob - 0.5) * 2,
-            'contribution': 'supporting' if stage_pred == prediction else 'conflicting'
-        }
-    
-    # Key findings
-    if 'behavioral' in stage_results and stage_results['behavioral'].get('prediction'):
-        explanation['key_findings'].append("Behavioral questionnaire indicates ASD patterns")
-    
-    if 'eye_tracking' in stage_results and stage_results['eye_tracking'].get('prediction'):
-        explanation['key_findings'].append("Eye tracking reveals atypical gaze patterns")
-    
-    if 'facial_analysis' in stage_results and stage_results['facial_analysis'].get('prediction'):
-        explanation['key_findings'].append("Facial analysis suggests social attention differences")
-    
-    # Clinical recommendations
-    if prediction:
-        explanation['clinical_recommendations'] = [
-            "Recommend comprehensive diagnostic evaluation by autism specialist",
-            "Consider additional standardized assessments (ADOS, ADI-R)",
-            "Evaluate for co-occurring conditions",
-            "Discuss early intervention options"
-        ]
-        explanation['next_steps'] = [
-            "Schedule appointment with developmental pediatrician",
-            "Begin documentation of behaviors and development",
-            "Connect with local autism support resources"
-        ]
-    else:
-        explanation['clinical_recommendations'] = [
-            "Continue monitoring developmental milestones",
-            "Consider re-evaluation if concerns persist",
-            "Discuss results with healthcare provider"
-        ]
-        explanation['next_steps'] = [
-            "Maintain regular developmental check-ups",
-            "Address any specific behavioral concerns",
-            "Stay informed about autism awareness"
-        ]
-    
-    return explanation
-
 def get_eye_tracking_description(feature_name):
     """Get description for eye tracking features"""
     descriptions = {
@@ -821,4 +771,5 @@ def get_eye_tracking_description(feature_name):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    port = int(os.environ.get('PORT', 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
