@@ -345,8 +345,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "models_loaded": len(models),
-        "available_stages": ["behavioral", "eye_tracking", "facial_analysis"]
+        "message": "ASD Detection API is running"
     }
 
 @app.get("/api/health")
@@ -827,4 +826,6 @@ def get_eye_tracking_description(feature_name):
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8001))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    logger.info(f"Starting server on port {port}")
+    logger.info("Server configuration complete")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
