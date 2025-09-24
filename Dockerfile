@@ -4,7 +4,7 @@ FROM node:18-alpine AS frontend-build
 # Build frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --force
 COPY frontend/ ./
 RUN npm run build
 
@@ -21,14 +21,14 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy backend requirements and install
-COPY backend/requirements.txt ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY backend/ ./
+COPY server.py ./
 
 # Copy built frontend
-COPY --from=frontend-build /app/frontend/build ./static
+COPY --from=frontend-build /app/frontend/build ./frontend/build
 
 # Copy models
 COPY models/ ./models/
