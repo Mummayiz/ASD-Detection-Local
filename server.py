@@ -51,6 +51,15 @@ async def api_health_check():
         "message": "ASD Detection API is running"
     }
 
+@app.get("/api/test")
+async def test_endpoint():
+    """Test endpoint to verify API is working"""
+    return {
+        "status": "success",
+        "message": "API is working",
+        "timestamp": datetime.now().isoformat()
+    }
+
 # Pydantic models for request data
 class BehavioralData(BaseModel):
     A1_Score: float
@@ -70,19 +79,26 @@ class BehavioralData(BaseModel):
 @app.post("/api/assessment/behavioral")
 async def assess_behavioral(data: BehavioralData):
     """Basic behavioral assessment endpoint"""
-    return {
-        "status": "success",
-        "message": "Behavioral assessment completed",
-        "prediction": "Assessment completed",
-        "confidence": 0.85,
-        "explanation": {
-            "feature_analysis": {
-                "age": {"value": data.age, "importance": 0.3},
-                "gender_encoded": {"value": 1 if data.gender == 'm' else 0, "importance": 0.2}
-            }
-        },
-        "timestamp": datetime.now().isoformat()
-    }
+    logger.info(f"Received behavioral assessment data: {data}")
+    try:
+        result = {
+            "status": "success",
+            "message": "Behavioral assessment completed",
+            "prediction": "Assessment completed",
+            "confidence": 0.85,
+            "explanation": {
+                "feature_analysis": {
+                    "age": {"value": data.age, "importance": 0.3},
+                    "gender_encoded": {"value": 1 if data.gender == 'm' else 0, "importance": 0.2}
+                }
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        logger.info(f"Returning result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Error in behavioral assessment: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/assessment/eye_tracking")
 async def assess_eye_tracking():
