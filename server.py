@@ -339,12 +339,16 @@ async def load_models():
         
     except Exception as e:
         logger.error(f"Error loading models: {str(e)}")
-        raise e
+        logger.warning("Continuing without models - using fallback assessments")
 
 @app.get("/")
 async def serve_frontend():
     """Serve the React frontend"""
-    return FileResponse("frontend/build/index.html")
+    try:
+        return FileResponse("frontend/build/index.html")
+    except Exception as e:
+        logger.error(f"Error serving frontend: {e}")
+        return {"message": "ASD Detection API is running", "status": "ok"}
 
 @app.get("/api/")
 async def api_root():
@@ -359,11 +363,7 @@ async def api_root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint - simple and fast"""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "server_version": "1.1.0"
-    }
+    return {"status": "ok"}
 
 @app.get("/api/health")
 async def api_health_check():
@@ -896,9 +896,18 @@ def get_eye_tracking_description(feature_name):
 if __name__ == "__main__":
     import uvicorn
     import asyncio
+    import threading
     
-    # Load models on startup
-    asyncio.run(load_models())
+    # Load models in background to not block startup
+    def load_models_background():
+        try:
+            asyncio.run(load_models())
+        except Exception as e:
+            logger.error(f"Background model loading failed: {e}")
+    
+    # Start model loading in background
+    model_thread = threading.Thread(target=load_models_background, daemon=True)
+    model_thread.start()
     
     port = int(os.environ.get("PORT", 8000))
     logger.info(f"🚀 Starting ASD Detection Server...")
