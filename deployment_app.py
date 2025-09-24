@@ -76,10 +76,7 @@ def load_models():
         logger.error(f"❌ Failed to load models: {str(e)}")
         return False
 
-@app.on_event("startup")
-async def startup_event():
-    """Load models on startup"""
-    load_models()
+# Models will be loaded on first request to avoid blocking Railway startup
 
 # Serve static files from frontend build
 app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
@@ -91,13 +88,8 @@ async def read_root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "models_loaded": len(models),
-        "server_version": "1.0.1"
-    }
+    """Ultra-simple health check for Railway"""
+    return {"status": "ok"}
 
 @app.post("/api/assessment/behavioral")
 async def assess_behavioral(data: BehavioralAssessment):
