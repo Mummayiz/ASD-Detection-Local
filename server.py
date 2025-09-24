@@ -307,19 +307,23 @@ async def load_models():
     global models, scalers, encoders
     
     try:
+        # Determine model path based on environment
+        model_path = '/app/models/' if os.path.exists('/app/models/') else 'models/'
+        logger.info(f"Loading models from: {model_path}")
+        
         # Load behavioral models
-        models['behavioral_rf'] = joblib.load('/app/models/behavioral_rf_model.joblib')
-        models['behavioral_svm'] = joblib.load('/app/models/behavioral_svm_model.joblib')
-        scalers['behavioral'] = joblib.load('/app/models/behavioral_scaler.joblib')
-        encoders['behavioral'] = joblib.load('/app/models/behavioral_label_encoder.joblib')
+        models['behavioral_rf'] = joblib.load(f'{model_path}behavioral_rf_model.joblib')
+        models['behavioral_svm'] = joblib.load(f'{model_path}behavioral_svm_model.joblib')
+        scalers['behavioral'] = joblib.load(f'{model_path}behavioral_scaler.joblib')
+        encoders['behavioral'] = joblib.load(f'{model_path}behavioral_label_encoder.joblib')
         
         logger.info("Behavioral models loaded successfully")
         
         # Load eye tracking models if available
-        if os.path.exists('/app/models/eye_tracking_rf_model.joblib'):
-            models['eye_tracking_rf'] = joblib.load('/app/models/eye_tracking_rf_model.joblib')
-            models['eye_tracking_svm'] = joblib.load('/app/models/eye_tracking_svm_model.joblib')
-            scalers['eye_tracking'] = joblib.load('/app/models/eye_tracking_scaler.joblib')
+        if os.path.exists(f'{model_path}eye_tracking_rf_model.joblib'):
+            models['eye_tracking_rf'] = joblib.load(f'{model_path}eye_tracking_rf_model.joblib')
+            models['eye_tracking_svm'] = joblib.load(f'{model_path}eye_tracking_svm_model.joblib')
+            scalers['eye_tracking'] = joblib.load(f'{model_path}eye_tracking_scaler.joblib')
             logger.info("Eye tracking models loaded successfully")
         
         logger.info("All models loaded successfully")
@@ -361,6 +365,23 @@ async def api_health_check():
         "timestamp": datetime.now().isoformat(),
         "models_loaded": len(models),
         "available_stages": ["behavioral", "eye_tracking", "facial_analysis"]
+    }
+
+@app.get("/debug/models")
+async def debug_models():
+    """Debug endpoint to check if models are loaded"""
+    model_path = '/app/models/' if os.path.exists('/app/models/') else 'models/'
+    return {
+        "models_loaded": list(models.keys()),
+        "scalers_loaded": list(scalers.keys()),
+        "encoders_loaded": list(encoders.keys()),
+        "model_path": model_path,
+        "models_exist": {
+            "behavioral_rf": os.path.exists(f"{model_path}behavioral_rf_model.joblib"),
+            "behavioral_svm": os.path.exists(f"{model_path}behavioral_svm_model.joblib"),
+            "behavioral_scaler": os.path.exists(f"{model_path}behavioral_scaler.joblib"),
+            "behavioral_encoder": os.path.exists(f"{model_path}behavioral_label_encoder.joblib"),
+        }
     }
 
 @app.post("/api/assessment/behavioral")
