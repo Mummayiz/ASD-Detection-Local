@@ -296,32 +296,33 @@ class AssessmentResult(BaseModel):
     explanation: Dict[str, Any]
     timestamp: str
 
-@app.on_event("startup")
-async def load_models():
-    """Load trained ML models on startup"""
+def load_models_lazy():
+    """Load models lazily when needed"""
     global models, scalers, encoders
     
-    try:
-        # Load behavioral models
-        models['behavioral_rf'] = joblib.load('/app/models/behavioral_rf_model.joblib')
-        models['behavioral_svm'] = joblib.load('/app/models/behavioral_svm_model.joblib')
-        scalers['behavioral'] = joblib.load('/app/models/behavioral_scaler.joblib')
-        encoders['behavioral'] = joblib.load('/app/models/behavioral_label_encoder.joblib')
-        
-        logger.info("Behavioral models loaded successfully")
-        
-        # Load eye tracking models if available
-        if os.path.exists('/app/models/eye_tracking_rf_model.joblib'):
-            models['eye_tracking_rf'] = joblib.load('/app/models/eye_tracking_rf_model.joblib')
-            models['eye_tracking_svm'] = joblib.load('/app/models/eye_tracking_svm_model.joblib')
-            scalers['eye_tracking'] = joblib.load('/app/models/eye_tracking_scaler.joblib')
-            logger.info("Eye tracking models loaded successfully")
-        
-        logger.info("All models loaded successfully")
-        
-    except Exception as e:
-        logger.error(f"Error loading models: {str(e)}")
-        raise e
+    if not models:  # Only load if not already loaded
+        try:
+            logger.info("Loading models...")
+            # Load behavioral models
+            models['behavioral_rf'] = joblib.load('/app/models/behavioral_rf_model.joblib')
+            models['behavioral_svm'] = joblib.load('/app/models/behavioral_svm_model.joblib')
+            scalers['behavioral'] = joblib.load('/app/models/behavioral_scaler.joblib')
+            encoders['behavioral'] = joblib.load('/app/models/behavioral_label_encoder.joblib')
+            
+            logger.info("Behavioral models loaded successfully")
+            
+            # Load eye tracking models if available
+            if os.path.exists('/app/models/eye_tracking_rf_model.joblib'):
+                models['eye_tracking_rf'] = joblib.load('/app/models/eye_tracking_rf_model.joblib')
+                models['eye_tracking_svm'] = joblib.load('/app/models/eye_tracking_svm_model.joblib')
+                scalers['eye_tracking'] = joblib.load('/app/models/eye_tracking_scaler.joblib')
+                logger.info("Eye tracking models loaded successfully")
+            
+            logger.info("All models loaded successfully")
+            
+        except Exception as e:
+            logger.error(f"Error loading models: {str(e)}")
+            raise e
 
 @app.get("/")
 async def serve_frontend():
@@ -362,6 +363,8 @@ async def api_health_check():
 async def assess_behavioral(data: BehavioralAssessment):
     """Stage 1: Behavioral Assessment with PSO optimization"""
     try:
+        # Load models if not already loaded
+        load_models_lazy()
         # Prepare features
         features = np.array([[
             data.A1_Score, data.A2_Score, data.A3_Score, data.A4_Score, data.A5_Score,
@@ -436,6 +439,8 @@ async def assess_behavioral(data: BehavioralAssessment):
 async def assess_eye_tracking(data: EyeTrackingData):
     """Stage 2: Eye Tracking Assessment with PSO optimization"""
     try:
+        # Load models if not already loaded
+        load_models_lazy()
         if 'eye_tracking_rf' not in models:
             raise HTTPException(status_code=501, detail="Eye tracking models not available")
         
