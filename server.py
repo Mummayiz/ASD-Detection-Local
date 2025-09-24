@@ -70,7 +70,7 @@ def json_encoder(obj):
 app = FastAPI(
     title="ASD Detection API",
     description="Machine Learning API for Autism Spectrum Disorder Detection with Multi-Stage Assessment",
-    version="1.0.0"
+    version="1.0.1"
 )
 
 app.add_middleware(
@@ -378,6 +378,7 @@ async def debug_models():
     """Debug endpoint to check if models are loaded"""
     model_path = '/app/models/' if os.path.exists('/app/models/') else 'models/'
     return {
+        "server_version": "1.0.1",
         "models_loaded": list(models.keys()),
         "scalers_loaded": list(scalers.keys()),
         "encoders_loaded": list(encoders.keys()),
