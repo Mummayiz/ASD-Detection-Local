@@ -25,7 +25,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY deployment_app.py ./
+COPY railway_minimal.py ./
 
 # Copy built frontend
 COPY --from=frontend-build /app/frontend/build ./frontend/build
@@ -37,4 +37,4 @@ COPY models/ ./models/
 EXPOSE 8001
 
 # Start the application
-CMD ["python", "deployment_app.py"]
+CMD ["python", "railway_minimal.py"]
