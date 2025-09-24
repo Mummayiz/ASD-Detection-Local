@@ -308,7 +308,10 @@ async def load_models():
     
     try:
         # Determine model path based on environment
-        model_path = '/app/models/' if os.path.exists('/app/models/') else 'models/'
+        if os.path.exists('/app/models/') and not os.path.exists('models/'):
+            model_path = '/app/models/'
+        else:
+            model_path = 'models/'
         logger.info(f"Loading models from: {model_path}")
         
         # Load behavioral models
