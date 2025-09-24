@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import os
 from datetime import datetime
 import logging
@@ -21,9 +23,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files (React build)
+app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
+
 @app.get("/")
-async def root():
-    return {"message": "ASD Detection API", "status": "active"}
+async def serve_frontend():
+    """Serve the React frontend"""
+    return FileResponse("frontend/build/index.html")
 
 @app.get("/health")
 async def health_check():
