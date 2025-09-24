@@ -69,8 +69,8 @@ def json_encoder(obj):
 
 app = FastAPI(
     title="ASD Detection API",
-    description="Machine Learning API for Autism Spectrum Disorder Detection with Multi-Stage Assessment",
-    version="1.0.1"
+    description="Machine Learning API for Autism Spectrum Disorder Detection with Multi-Stage Assessment and Enhanced Eye Tracking Visualization",
+    version="1.1.0"
 )
 
 app.add_middleware(
@@ -368,14 +368,14 @@ async def health_check():
             "model_keys": list(models.keys()),
             "scaler_keys": list(scalers.keys()),
             "encoder_keys": list(encoders.keys()),
-            "server_version": "1.0.1"
+            "server_version": "1.1.0"
         }
     except Exception as e:
         return {
             "status": "healthy",
             "timestamp": datetime.now().isoformat(),
             "error": str(e),
-            "server_version": "1.0.1"
+            "server_version": "1.1.0"
         }
 
 @app.get("/api/health")
@@ -566,7 +566,15 @@ async def assess_eye_tracking(data: EyeTrackingData):
             'model_results': {
                 'random_forest': {'probability': float(rf_pred[1]), 'prediction': int(rf_pred[1] > 0.5)},
                 'svm': {'probability': float(svm_pred[1]), 'prediction': int(svm_pred[1] > 0.5)},
-                'pso': {'probability': float(pso_prob), 'prediction': int(pso_pred), 'weights': optimal_weights.tolist()}
+                'pso': {'probability': float(pso_prob), 'prediction': int(pso_pred), 'weights': optimal_weights.tolist()},
+                'visualization_enabled': True,
+                'gaze_metrics': {
+                    'fixation_count': float(data.fixation_count),
+                    'mean_saccade': float(data.mean_saccade),
+                    'blink_rate': float(data.blink_rate),
+                    'gaze_stability': float(data.gaze_stability),
+                    'avg_fixation_duration': float(data.avg_fixation_duration)
+                }
             },
             'explanation': explanation,
             'stage': 'eye_tracking', 

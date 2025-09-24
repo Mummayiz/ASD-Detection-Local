@@ -36,7 +36,7 @@ import {
   Info
 } from 'lucide-react';
 
-const BACKEND_URL = "https://web-production-22e4a.up.railway.app";
+const BACKEND_URL = window.location.origin; // Use local backend
 console.log("Backend URL:", BACKEND_URL);
 console.log("Process env REACT_APP_BACKEND_URL:", process.env.REACT_APP_BACKEND_URL);
 console.log("Window location origin:", window.location.origin);
@@ -570,12 +570,18 @@ function App() {
 
   const EyeTrackingTest = () => {
     const videoRef = useRef(null);
+    const canvasRef = useRef(null);
     const [isRecording, setIsRecording] = useState(false);
     const [eyeTrackingData, setEyeTrackingData] = useState(null);
     const [countdown, setCountdown] = useState(null);
     const [recordingTime, setRecordingTime] = useState(0);
     const [stream, setStream] = useState(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [gazePointer, setGazePointer] = useState({ x: 0, y: 0 });
+    const [fixationPoints, setFixationPoints] = useState([]);
+    const [saccadeTrails, setSaccadeTrails] = useState([]);
+    const [heatMapData, setHeatMapData] = useState([]);
+    const [showVisualization, setShowVisualization] = useState(false);
     const [eyeMetrics, setEyeMetrics] = useState({
       fixationCount: 0,
       saccadeCount: 0,
@@ -584,6 +590,123 @@ function App() {
       avgFixationDuration: 250, // Normal fixation: 200-400ms
       pupilSize: 3.5 // Normal pupil size: 3-4mm
     });
+
+    // Gaze simulation functions
+    const simulateGazeMovement = () => {
+      if (!isRecording) return;
+      
+      const videoElement = videoRef.current;
+      if (!videoElement) return;
+      
+      const rect = videoElement.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      // Simulate natural eye movement patterns
+      const time = Date.now() * 0.001;
+      const newX = centerX + Math.sin(time * 0.5) * 50 + (Math.random() - 0.5) * 30;
+      const newY = centerY + Math.cos(time * 0.3) * 30 + (Math.random() - 0.5) * 20;
+      
+      setGazePointer({ x: newX, y: newY });
+      
+      // Add fixation points occasionally
+      if (Math.random() < 0.1) {
+        setFixationPoints(prev => [...prev.slice(-10), { x: newX, y: newY, timestamp: Date.now() }]);
+      }
+      
+      // Add saccade trails
+      setSaccadeTrails(prev => [...prev.slice(-20), { x: newX, y: newY, timestamp: Date.now() }]);
+      
+      // Update heat map data
+      setHeatMapData(prev => [...prev.slice(-50), { x: newX, y: newY, intensity: Math.random() }]);
+    };
+
+    const drawGazeVisualization = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw heat map
+      heatMapData.forEach(point => {
+        const alpha = point.intensity * 0.3;
+        ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 20, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+      
+      // Draw saccade trails
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      saccadeTrails.forEach((point, index) => {
+        if (index === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      });
+      ctx.stroke();
+      
+      // Draw fixation points
+      fixationPoints.forEach(point => {
+        const age = Date.now() - point.timestamp;
+        const alpha = Math.max(0, 1 - age / 3000); // Fade over 3 seconds
+        ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+      
+      // Draw current gaze pointer
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+      ctx.beginPath();
+      ctx.arc(gazePointer.x, gazePointer.y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Draw gaze pointer ring
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(gazePointer.x, gazePointer.y, 15, 0, 2 * Math.PI);
+      ctx.stroke();
+    };
+
+    // Effect for gaze simulation
+    useEffect(() => {
+      let animationFrame;
+      if (isRecording) {
+        const animate = () => {
+          simulateGazeMovement();
+          drawGazeVisualization();
+          animationFrame = requestAnimationFrame(animate);
+        };
+        animate();
+      }
+      return () => {
+        if (animationFrame) {
+          cancelAnimationFrame(animationFrame);
+        }
+      };
+    }, [isRecording, gazePointer, fixationPoints, saccadeTrails, heatMapData]);
+
+    // Effect to resize canvas to match video
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (canvas && video) {
+        const resizeCanvas = () => {
+          canvas.width = video.videoWidth || video.clientWidth;
+          canvas.height = video.videoHeight || video.clientHeight;
+        };
+        
+        resizeCanvas();
+        video.addEventListener('loadedmetadata', resizeCanvas);
+        return () => video.removeEventListener('loadedmetadata', resizeCanvas);
+      }
+    }, [isInitialized]);
 
     const initializeCamera = async () => {
       try {
@@ -602,6 +725,12 @@ function App() {
       if (!isInitialized) {
         await initializeCamera();
       }
+      
+      // Clear previous data
+      setFixationPoints([]);
+      setSaccadeTrails([]);
+      setHeatMapData([]);
+      setShowVisualization(true);
       
       setCountdown(3);
       for (let i = 3; i > 0; i--) {
@@ -729,6 +858,15 @@ function App() {
                   className="w-full h-full object-cover"
                 />
                 
+                {/* Gaze visualization overlay */}
+                {showVisualization && (
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute inset-0 w-full h-full pointer-events-none z-20"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                )}
+                
                 {isRecording && (
                   <div className="absolute top-4 right-4 flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
@@ -739,12 +877,47 @@ function App() {
                 )}
               </div>
 
+              {/* Visualization Legend */}
+              {showVisualization && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-2">Gaze Visualization Legend:</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <span>Current Gaze Pointer</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <span>Fixation Points</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-cyan-500 rounded-full"></div>
+                      <span>Saccade Trails</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full opacity-50"></div>
+                      <span>Heat Map Areas</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Recording Controls */}
               <div className="flex justify-center space-x-4 mt-4">
                 {!isRecording && !eyeTrackingData && (
                   <Button onClick={startRecording} className="flex-1" size="lg">
                     <Eye className="w-4 h-4 mr-2" />
                     Start Recording
+                  </Button>
+                )}
+                
+                {isInitialized && !isRecording && (
+                  <Button 
+                    onClick={() => setShowVisualization(!showVisualization)} 
+                    variant="outline"
+                    size="lg"
+                  >
+                    {showVisualization ? 'Hide' : 'Show'} Gaze Visualization
                   </Button>
                 )}
                 
