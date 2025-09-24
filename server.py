@@ -358,25 +358,12 @@ async def api_root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
-    try:
-        return {
-            "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "models_loaded": len(models),
-            "available_stages": ["behavioral", "eye_tracking", "facial_analysis"],
-            "model_keys": list(models.keys()),
-            "scaler_keys": list(scalers.keys()),
-            "encoder_keys": list(encoders.keys()),
-            "server_version": "1.1.0"
-        }
-    except Exception as e:
-        return {
-            "status": "healthy",
-            "timestamp": datetime.now().isoformat(),
-            "error": str(e),
-            "server_version": "1.1.0"
-        }
+    """Health check endpoint - simple and fast"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "server_version": "1.1.0"
+    }
 
 @app.get("/api/health")
 async def api_health_check():
@@ -913,5 +900,10 @@ if __name__ == "__main__":
     # Load models on startup
     asyncio.run(load_models())
     
-    port = int(os.environ.get("PORT", 8001))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    port = int(os.environ.get("PORT", 8000))
+    logger.info(f"🚀 Starting ASD Detection Server...")
+    logger.info(f"📱 Port: {port}")
+    logger.info(f"🔧 API Docs: http://0.0.0.0:{port}/api/docs")
+    logger.info(f"❤️  Health: http://0.0.0.0:{port}/health")
+    logger.info("=" * 50)
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
