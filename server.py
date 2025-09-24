@@ -307,8 +307,8 @@ class AssessmentResult(BaseModel):
     explanation: Dict[str, Any]
     timestamp: str
 
-@app.on_event("startup")
-async def load_models():
+# @app.on_event("startup")
+# async def load_models():
     """Load trained ML models on startup"""
     global models, scalers, encoders
     
@@ -362,7 +362,7 @@ async def api_root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint - simple and fast"""
+    """Health check endpoint - ultra simple"""
     return {"status": "ok"}
 
 @app.get("/api/health")
@@ -895,19 +895,6 @@ def get_eye_tracking_description(feature_name):
 
 if __name__ == "__main__":
     import uvicorn
-    import asyncio
-    import threading
-    
-    # Load models in background to not block startup
-    def load_models_background():
-        try:
-            asyncio.run(load_models())
-        except Exception as e:
-            logger.error(f"Background model loading failed: {e}")
-    
-    # Start model loading in background
-    model_thread = threading.Thread(target=load_models_background, daemon=True)
-    model_thread.start()
     
     port = int(os.environ.get("PORT", 8000))
     logger.info(f"🚀 Starting ASD Detection Server...")
@@ -915,4 +902,6 @@ if __name__ == "__main__":
     logger.info(f"🔧 API Docs: http://0.0.0.0:{port}/api/docs")
     logger.info(f"❤️  Health: http://0.0.0.0:{port}/health")
     logger.info("=" * 50)
+    
+    # Start server immediately - models will load on first request
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
