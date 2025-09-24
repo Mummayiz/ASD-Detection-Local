@@ -36,7 +36,7 @@ import {
   Info
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+const BACKEND_URL = "https://web-production-22e4a.up.railway.app";
 console.log("Backend URL:", BACKEND_URL);
 console.log("Process env REACT_APP_BACKEND_URL:", process.env.REACT_APP_BACKEND_URL);
 console.log("Window location origin:", window.location.origin);
