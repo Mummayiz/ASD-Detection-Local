@@ -37,6 +37,9 @@ import {
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+console.log("Backend URL:", BACKEND_URL);
+console.log("Process env REACT_APP_BACKEND_URL:", process.env.REACT_APP_BACKEND_URL);
+console.log("Window location origin:", window.location.origin);
 
 function App() {
   const [currentStage, setCurrentStage] = useState(0); // Start with introduction page
