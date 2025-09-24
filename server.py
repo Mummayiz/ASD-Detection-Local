@@ -357,7 +357,10 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "models_loaded": len(models),
-        "available_stages": ["behavioral", "eye_tracking", "facial_analysis"]
+        "available_stages": ["behavioral", "eye_tracking", "facial_analysis"],
+        "model_keys": list(models.keys()),
+        "scaler_keys": list(scalers.keys()),
+        "encoder_keys": list(encoders.keys())
     }
 
 @app.get("/api/health")
