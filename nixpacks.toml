@@ -5,6 +5,7 @@ nixPkgs = ["python39", "nodejs-18_x", "npm-9_x"]
 cmds = [
   "pip install -r requirements.txt",
   "cd frontend && npm install --legacy-peer-deps --force",
+  "cd frontend && npm install ajv@8.12.0 --save",
   "cd frontend && npm run build"
 ]
 
