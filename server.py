@@ -84,6 +84,11 @@ app.add_middleware(
 # Mount static files (React build)
 app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
 
+@app.on_event("startup")
+async def startup_event():
+    """Load models on startup"""
+    await load_models()
+
 # Database connection
 MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)
@@ -821,5 +826,10 @@ def get_eye_tracking_description(feature_name):
 
 if __name__ == "__main__":
     import uvicorn
+    import asyncio
+    
+    # Load models on startup
+    asyncio.run(load_models())
+    
     port = int(os.environ.get("PORT", 8001))
     uvicorn.run(app, host="0.0.0.0", port=port)
