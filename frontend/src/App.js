@@ -402,15 +402,26 @@ function App() {
           A10_Score: convertAnswerValue(answers.A10_Score)
         };
 
+        console.log('Sending data to:', `${BACKEND_URL}/api/assessment/behavioral`);
+        console.log('Data being sent:', backendAnswers);
+        
         const response = await fetch(`${BACKEND_URL}/api/assessment/behavioral`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(backendAnswers)
         });
         
-        if (!response.ok) throw new Error('Assessment failed');
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log('Error response:', errorText);
+          throw new Error(`Assessment failed: ${response.status} ${errorText}`);
+        }
         
         const result = await response.json();
+        console.log('Received result:', result);
         setAssessmentData(prev => ({ ...prev, behavioral: result }));
         setCurrentStage(2);
       } catch (err) {
