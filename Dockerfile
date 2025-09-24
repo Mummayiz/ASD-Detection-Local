@@ -1,5 +1,5 @@
 # Multi-stage build for ASD Detection Application
-FROM node:20-alpine AS frontend-build
+FROM node:18-alpine AS frontend-build
 
 # Build frontend
 WORKDIR /app/frontend
